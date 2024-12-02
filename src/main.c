@@ -1,130 +1,277 @@
 #include "raylib.h"
 #include "raymath.h"
-#include "rlgl.h"
+#include <stdio.h>
+#define DEADZONE 20.0f
+
+void draw_axis (Model * p_model)
+{
+    if (NULL == p_model)
+    {
+        return;
+    }
+
+    // Transform and draw the X-axis cylinder (red)
+    Matrix xAxisTransform = MatrixRotateZ(PI / 2.0f); // Rotate around Z-axis
+    xAxisTransform        = MatrixMultiply(
+        xAxisTransform, MatrixTranslate(0.0f, 0.0f, 0.0f)); // Move to X-axis
+    p_model->transform = xAxisTransform;
+    DrawModel(*p_model, Vector3Zero(), 1.0f, RED);
+
+    // Transform and draw the Y-axis cylinder (green)
+    Matrix yAxisTransform = MatrixTranslate(0.0f, 0.0f, 0.0f); // Move to Y-axis
+    p_model->transform    = yAxisTransform;
+    DrawModel(*p_model, Vector3Zero(), 1.0f, GREEN);
+
+    // Transform and draw the Z-axis cylinder (blue)
+    Matrix zAxisTransform = MatrixRotateX(PI / 2.0f); // Rotate around X-axis
+    zAxisTransform        = MatrixMultiply(
+        zAxisTransform, MatrixTranslate(0.0f, 0.0f, 0.0f)); // Move to Z-axis
+    p_model->transform = zAxisTransform;
+    DrawModel(*p_model, Vector3Zero(), 1.0f, BLUE);
+}
+
+void draw_reticle (const int   screen_width,
+                   const int   screen_height,
+                   const float deadzone)
+{
+    DrawCircleLines(screen_width / 2,
+                    screen_height / 2,
+                    screen_height / 3.0f,
+                    Fade(RED, 0.5f));
+    DrawCircleLines(
+        screen_width / 2, screen_height / 2, deadzone, Fade(RED, 0.5f));
+}
+
+static float previous_scale_factor = 1.0f; // Store the previous scale factor
+
+void calculate_aim (const int       screen_height,
+                    const float     deadzone,
+                    const Vector2 * p_screen_center,
+                    Vector2 *       p_mouse_delta,
+                    Vector2 *       p_out_aim)
+{
+    if ((NULL == p_screen_center) || (NULL == p_mouse_delta)
+        || (NULL == p_out_aim))
+    {
+        return;
+    }
+
+    float distance = Vector2Distance(*p_mouse_delta, *p_screen_center);
+
+    if ((deadzone > distance))
+    {
+        return; // Ignore small distances to avoid jittering
+    }
+
+    if (!IsCursorOnScreen())
+    {
+        p_out_aim->x = 0.0f;
+        p_out_aim->y = 0.0f;
+    }
+
+    float radius = screen_height / 3.0f;
+
+    // Clamp mouse position to circle's edge if outside the radius
+    if (distance > radius)
+    {
+        Vector2 direction = Vector2Subtract(*p_mouse_delta, *p_screen_center);
+        direction         = Vector2Normalize(direction);
+        direction         = Vector2Scale(direction, radius);
+        *p_mouse_delta    = Vector2Add(*p_screen_center, direction);
+    }
+
+    Vector2 aim = Vector2Subtract(*p_mouse_delta, *p_screen_center);
+    aim         = Vector2Normalize(aim);
+
+    // Adjust sensitivity and apply exponential factor
+    float base_sensitivity = 0.05f; // Base sensitivity factor
+    float exponent         = 2.0f;  // Exponential growth factor
+    float scale_factor = powf(distance / radius, exponent) * base_sensitivity;
+    if (distance > radius)
+    {
+        scale_factor = previous_scale_factor;
+    }
+    else
+    {
+        previous_scale_factor = scale_factor;
+    }
+    aim.x = aim.x * scale_factor * -1; // Invert x direction
+    aim.y = aim.y * scale_factor;
+
+    p_out_aim->x += aim.x;
+    p_out_aim->y += aim.y;
+
+    printf("aim: %f, %f\n", p_out_aim->x, p_out_aim->y);
+}
+
+void update_ship_position (Vector3 * p_ship_position,
+                           Matrix *  p_rotation_matrix)
+{
+    static float accel_speed  = 0.0f;  // Initialize acceleration speed
+    const float  accel_factor = 0.01f; // Acceleration factor
+    const float  max_speed    = 0.5f;  // Maximum speed
+    const float  roll_speed   = 0.1f;
+
+    // forward and backward movement
+    if (IsKeyDown(KEY_W))
+    {
+        if (accel_speed < 0.0f) // If moving backward, reset speed
+        {
+            accel_speed = 0.0f;
+        }
+        accel_speed += accel_factor;
+        if (accel_speed > max_speed)
+        {
+            accel_speed = max_speed;
+        }
+        Vector3 forward = { p_rotation_matrix->m8,
+                            p_rotation_matrix->m9,
+                            p_rotation_matrix->m10 };
+        *p_ship_position
+            = Vector3Add(*p_ship_position, Vector3Scale(forward, accel_speed));
+    }
+    else if (IsKeyDown(KEY_S))
+    {
+        if (accel_speed > 0.0f) // If moving forward, reset speed
+        {
+            accel_speed = 0.0f;
+        }
+        accel_speed -= accel_factor;
+        if (accel_speed < -max_speed)
+        {
+            accel_speed = -max_speed;
+        }
+        Vector3 backward = { -p_rotation_matrix->m8,
+                             -p_rotation_matrix->m9,
+                             -p_rotation_matrix->m10 };
+        *p_ship_position = Vector3Add(*p_ship_position,
+                                      Vector3Scale(backward, -accel_speed));
+    }
+    else
+    {
+        printf("accel_speed: %f\n", accel_speed);
+        if (accel_speed > 0.0f)
+        {
+            accel_speed -= accel_factor;
+            if (accel_speed < 0.0f)
+            {
+                accel_speed = 0.0f;
+            }
+
+            Vector3 backward = { -p_rotation_matrix->m8,
+                                 -p_rotation_matrix->m9,
+                                 -p_rotation_matrix->m10 };
+            *p_ship_position = Vector3Add(*p_ship_position,
+                                          Vector3Scale(backward, -accel_speed));
+        }
+        else if (accel_speed < 0.0f)
+        {
+            accel_speed += accel_factor;
+            if (accel_speed > 0.0f)
+            {
+                accel_speed = 0.0f;
+            }
+
+            Vector3 forward  = { p_rotation_matrix->m8,
+                                 p_rotation_matrix->m9,
+                                 p_rotation_matrix->m10 };
+            *p_ship_position = Vector3Add(*p_ship_position,
+                                          Vector3Scale(forward, accel_speed));
+        }
+    }
+}
 
 int main (void)
 {
-    const int screenWidth  = 1920;
-    const int screenHeight = 1080;
-    InitWindow(screenWidth, screenHeight, "3D Rectangle Control");
+    const int     screen_width  = 1920;
+    const int     screen_height = 1080;
+    const Vector2 screen_center = { screen_width / 2.0f, screen_height / 2.0f };
+    InitWindow(screen_width, screen_height, "3D Axes with Thickness");
+    SetTargetFPS(60); // Set FPS
 
-    // Camera setup
-    // Define the camera to look into our 3d world
-    Camera3D camera = { 0 };
-    camera.position = (Vector3) { 10.0f, 10.0f, 10.0f }; // Camera position
-    camera.target   = (Vector3) { 0.0f, 0.0f, 0.0f }; // Camera looking at point
-    camera.up       = (Vector3) {
-        0.0f, 1.0f, 0.0f
-    }; // Camera up vector (rotation towards target)
+    Camera3D camera   = { 0 };
+    camera.position   = (Vector3) { 10.0f, 10.0f, 10.0f };
+    camera.target     = (Vector3) { 0.0f, 0.0f, 0.0f };
+    camera.up         = (Vector3) { 0.0f, 1.0f, 0.0f };
     camera.fovy       = 45.0f;              // Camera field-of-view Y
     camera.projection = CAMERA_PERSPECTIVE; // Camera projection type
 
-    Vector3 model_size = { 1.0f, 0.5f, 2.0f };
-    Mesh    mesh       = GenMeshCube(model_size.x, model_size.y, model_size.z);
-    Model   model      = LoadModelFromMesh(mesh);
-    Vector3 model_position = { 0.0f, 0.0f, 0.0f };
-    Vector3 model_rotation = { 0.0f, 0.0f, 0.0f };
+    Mesh  cylinder_mesh  = GenMeshCylinder(0.05f, 2.0f, 8);
+    Model cylinder_model = LoadModelFromMesh(cylinder_mesh);
 
-    SetTargetFPS(60); // Set FPS
+    Vector2 mouse_base_pos = GetMousePosition();
+    Vector2 mouse_cur_pos  = GetMousePosition();
+    Vector2 mouse_delta    = { 0.0f, 0.0f };
+
+    Model ship_model
+        = LoadModel(ASSETS_PATH "Intergalactic_Spaceship-(Wavefront).obj");
+    Vector3 ship_position = { 0.0f, 0.0f, 0.0f };
+    Vector2 aim           = { 0.0f, 0.0f };
+    HideCursor();
 
     while (!WindowShouldClose())
     {
-        float wheelMove = GetMouseWheelMove();
-
-        if (0 != wheelMove)
+        if (IsMouseButtonPressed(MOUSE_MIDDLE_BUTTON))
         {
-            Vector3 direction = Vector3Subtract(camera.target, camera.position);
-            direction         = Vector3Normalize(direction);
-            camera.position   = Vector3Add(camera.position,
-                                         Vector3Scale(direction, wheelMove));
+            SetMousePosition(screen_center.x, screen_center.y);
+            mouse_base_pos = GetMousePosition();
+            aim            = (Vector2) { 0.0f, 0.0f };
         }
 
-        if (IsKeyDown(KEY_R))
+        if (IsKeyPressed(KEY_R))
         {
-            model_position = (Vector3) { 0.0f, 0.0f, 0.0f };
-            model_rotation = (Vector3) { 0.0f, 0.0f, 0.0f };
+            SetMousePosition(screen_center.x, screen_center.y);
+            mouse_base_pos = GetMousePosition();
+            aim            = (Vector2) { 0.0f, 0.0f };
+            ship_position  = (Vector3) { 0.0f, 0.0f, 0.0f };
         }
 
-        // Update rotation
-        if (IsKeyDown(KEY_LEFT))
-            model_rotation.y += 1.0f;
-        if (IsKeyDown(KEY_RIGHT))
-            model_rotation.y -= 1.0f;
-        if (IsKeyDown(KEY_UP))
-            model_rotation.x -= 1.0f;
-        if (IsKeyDown(KEY_DOWN))
-            model_rotation.x += 1.0f;
+        mouse_cur_pos = GetMousePosition();
+        mouse_delta   = Vector2Subtract(mouse_cur_pos, mouse_base_pos);
+        mouse_delta   = Vector2Add(screen_center, mouse_delta);
 
-        Matrix transform
-            = MatrixRotateXYZ((Vector3) { DEG2RAD * model_rotation.x,
-                                          DEG2RAD * model_rotation.y,
-                                          DEG2RAD * model_rotation.z });
-        model.transform = transform;
+        calculate_aim(
+            screen_height, DEADZONE, &screen_center, &mouse_delta, &aim);
+        camera.position     = (Vector3) { ship_position.x + 10.0f,
+                                          ship_position.y + 10.0f,
+                                          ship_position.z + 10.0f };
+        camera.target       = ship_position;
+        Matrix pitch_matrix = MatrixRotateX(aim.y);
+        Matrix yaw_matrix   = MatrixRotateY(aim.x);
 
-        Vector3 forward = { transform.m8,
-                            transform.m9,
-                            transform.m10 }; // Forward vector (Z axis)
-        Vector3 right   = { transform.m0,
-                            transform.m1,
-                            transform.m2 }; // Right vector (X axis)
-        Vector3 up      = { transform.m4,
-                            transform.m5,
-                            transform.m6 }; // Up vector (Y axis)
+        Matrix rotation_matrix = MatrixMultiply(pitch_matrix, yaw_matrix);
 
-        // Movement controls
-        if (IsKeyDown(KEY_W))
-            model_position
-                = Vector3Subtract(model_position, Vector3Scale(forward, 0.1f));
-        if (IsKeyDown(KEY_S))
-            model_position
-                = Vector3Add(model_position, Vector3Scale(forward, 0.1f));
-        if (IsKeyDown(KEY_A))
-            model_position
-                = Vector3Subtract(model_position, Vector3Scale(right, 0.1f));
-        if (IsKeyDown(KEY_D))
-            model_position
-                = Vector3Add(model_position, Vector3Scale(right, 0.1f));
-        if (IsKeyDown(KEY_Q))
-            model_position
-                = Vector3Subtract(model_position, Vector3Scale(up, 0.1f));
-        if (IsKeyDown(KEY_E))
-            model_position = Vector3Add(model_position, Vector3Scale(up, 0.1f));
+        update_ship_position(&ship_position, &rotation_matrix);
+        ship_model.transform = rotation_matrix;
 
         BeginDrawing();
         ClearBackground(RAYWHITE);
-        BeginMode3D(camera);
-        DrawGrid(20, 1.0f); // Draw grid to visualize space
 
-        DrawModel(model, model_position, 1.0f, RED);
-        // draw the forward vector on top
-        DrawLine3D(model_position,
-                   Vector3Add(model_position, Vector3Scale(forward, 2.0f)),
-                   GREEN);
+        BeginMode3D(camera);
+
+        DrawGrid(10000, 1.0f); // Draw grid to visualize space
+        draw_axis(&cylinder_model);
+
+        DrawModel(ship_model, ship_position, 0.5f, WHITE);
 
         EndMode3D();
 
-        DrawText("W/S/A/D: Move, Arrow Keys: Rotate", 10, 10, 20, DARKGRAY);
-        DrawText(TextFormat("Position: %.2f, %.2f, %.2f",
-                            model_position.x,
-                            model_position.y,
-                            model_position.z),
-                 10,
-                 40,
-                 20,
-                 DARKGRAY);
-        DrawText(TextFormat("Rotation: %.2f, %.2f, %.2f",
-                            model_rotation.x,
-                            model_rotation.y,
-                            model_rotation.z),
-                 10,
-                 60,
-                 20,
-                 DARKGRAY);
+        draw_reticle(screen_width, screen_height, DEADZONE);
+        DrawCircleV(mouse_delta, 10, RED);
 
+        DrawText("X: Red, Y: Green, Z: Blue", 10, 10, 20, DARKGRAY);
+        DrawText(
+            TextFormat("Mouse Delta: %f, %f", mouse_delta.x, mouse_delta.y),
+            10,
+            30,
+            20,
+            DARKGRAY);
         EndDrawing();
     }
 
-    CloseWindow(); // Close window and OpenGL context
+    UnloadModel(cylinder_model); // Unload the model
+    UnloadModel(ship_model);     // Unload the model
+    CloseWindow();               // Close window and OpenGL context
 
     return 0;
 }
