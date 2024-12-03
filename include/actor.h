@@ -11,12 +11,12 @@ typedef struct actor_t
     Quaternion rotation;
 } actor_t;
 
-Vector3 get_forward (actor_t * p_actor);
-Vector3 get_back (actor_t * p_actor);
-Vector3 get_left (actor_t * p_actor);
-Vector3 get_right (actor_t * p_actor);
-Vector3 get_up (actor_t * p_actor);
-Vector3 get_down (actor_t * p_actor);
-void    rotate_local_euler (actor_t * p_actor, Vector3 axis, float degrees);
+Vector3 actor_get_forward (actor_t * p_actor);
+Vector3 actor_get_back (actor_t * p_actor);
+Vector3 actor_get_left (actor_t * p_actor);
+Vector3 actor_get_right (actor_t * p_actor);
+Vector3 actor_get_up (actor_t * p_actor);
+Vector3 actor_get_down (actor_t * p_actor);
+void actor_rotate_local_euler (actor_t * p_actor, Vector3 axis, float degrees);
 
 #endif
