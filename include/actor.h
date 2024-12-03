@@ -1,0 +1,22 @@
+#ifndef UJU_ACTOR_H
+#define UJU_ACTOR_H
+
+#include "raylib.h"
+#include "raymath.h"
+
+typedef struct actor_t
+{
+    Vector3    position;
+    Vector3    velocity;
+    Quaternion rotation;
+} actor_t;
+
+Vector3 get_forward (actor_t * p_actor);
+Vector3 get_back (actor_t * p_actor);
+Vector3 get_left (actor_t * p_actor);
+Vector3 get_right (actor_t * p_actor);
+Vector3 get_up (actor_t * p_actor);
+Vector3 get_down (actor_t * p_actor);
+void    rotate_local_euler (actor_t * p_actor, Vector3 axis, float degrees);
+
+#endif
