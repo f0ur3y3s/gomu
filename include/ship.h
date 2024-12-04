@@ -30,11 +30,6 @@ typedef struct delta_t
     float yaw_left;
 } delta_t;
 
-inline void delta_reset (delta_t * p_delta)
-{
-    *p_delta = (delta_t) { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
-}
-
 typedef struct ship_t
 
 {
@@ -58,5 +53,6 @@ void     ship_draw (ship_t * p_ship);
 void     ship_update (ship_t * p_ship, float delta_time);
 void     ship_teardown (ship_t * p_ship);
 void     ship_reset (ship_t * p_ship);
+void     delta_reset (delta_t * p_delta);
 
 #endif

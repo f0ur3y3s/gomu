@@ -202,3 +202,8 @@ void ship_reset (ship_t * p_ship)
     delta_reset(&(p_ship->input_delta));
     delta_reset(&(p_ship->smooth_delta));
 }
+
+void delta_reset (delta_t * p_delta)
+{
+    *p_delta = (delta_t) { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
+}
