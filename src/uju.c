@@ -3,27 +3,155 @@
 #define SHIP_MODEL   ASSETS_PATH "lowpoly/ship.gltf"
 #define SHIP_TEXTURE ASSETS_PATH "lowpoly/a16.png"
 
+Vector2 update_aim (ship_t * p_ship)
+{
+    Vector2 mouse_delta   = GetMousePosition();
+    Vector2 screen_center = { SCREEN_WIDTH / 2.0f, SCREEN_HEIGHT / 2.0f };
+    mouse_delta           = Vector2Subtract(mouse_delta, screen_center);
+
+    if (Vector2Length(mouse_delta) < DEADZONE)
+    {
+        return;
+    }
+
+    float max_size
+        = SCREEN_WIDTH > SCREEN_HEIGHT ? SCREEN_HEIGHT : SCREEN_WIDTH;
+    float radius = max_size / 3.0f;
+
+    if (Vector2Length(mouse_delta) > radius)
+    {
+        Vector2 direction = Vector2Subtract(mouse_delta, screen_center);
+        direction         = Vector2Normalize(direction);
+        direction         = Vector2Scale(direction, radius);
+        mouse_delta       = Vector2Add(screen_center, direction);
+    }
+
+    Vector2 aim = Vector2Subtract(mouse_delta, screen_center);
+    aim         = Vector2Normalize(aim);
+    return aim;
+    // float base_sensitivity = 0.5f;
+    // float exponent         = 2.0f;
+    // float scale_factor     = powf(Vector2Length(mouse_delta) / radius,
+    // exponent)
+    //                      * base_sensitivity;
+
+    // if (Vector2Length(mouse_delta) > radius)
+    // {
+    //     scale_factor = 1.0f;
+    // }
+
+    // aim.x = aim.x * scale_factor;
+    // aim.y = aim.y * scale_factor;
+
+    // actor_rotate_local_euler(&p_ship->actor, (Vector3) { 0, 1, 0 }, -aim.x);
+    // actor_rotate_local_euler(&p_ship->actor, (Vector3) { 1, 0, 0 }, -aim.y);
+}
+
+void update_input (ship_t * p_ship)
+{
+    p_ship->input_forward = 0.0f;
+    p_ship->input_left    = 0.0f;
+    p_ship->input_up      = 0.0f;
+
+    if (IsKeyDown(KEY_R))
+    {
+        ship_reset(p_ship);
+    }
+    if (IsKeyDown(KEY_W))
+    {
+        p_ship->input_forward = 1.0f;
+    }
+    if (IsKeyDown(KEY_S))
+    {
+        p_ship->input_forward = -1.0f;
+    }
+    if (IsKeyDown(KEY_A))
+    {
+        p_ship->input_left = 1.0f;
+    }
+    if (IsKeyDown(KEY_D))
+    {
+        p_ship->input_left = -1.0f;
+    }
+    if (IsKeyDown(KEY_SPACE))
+    {
+        p_ship->input_up = 1.0f;
+    }
+    if (IsKeyDown(KEY_LEFT_SHIFT))
+    {
+        p_ship->input_up = -1.0f;
+    }
+}
+
 int main (int argc, char ** argv)
 {
     // Initial setup
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "uju raylib");
     SetTargetFPS(60);
-
+    camera_t * p_camera = camera_init(
+        (Vector3) { 0, 1, -3 }, (Vector3) { 0, 0, 0 }, (Vector3) { 0, 1, 0 });
     movement_t movement_stats = {
-        .max_speed      = 1.0f,
-        .engine_accel   = 0.1f,
-        .thruster_accel = 0.05f,
+        .max_speed      = 50.0f,
+        .engine_accel   = 20.0f,
+        .thruster_accel = 5.0f,
     };
     ship_t * p_ship = ship_init(
         (Vector3) { 0, 0, 0 }, SHIP_MODEL, SHIP_TEXTURE, &movement_stats);
 
+    if (NULL == p_ship)
+    {
+        printf("Failed to initialize ship\n");
+    }
+
+    int count = 0;
     // Main game loop
     while (!WindowShouldClose())
     {
+        // Update
+        update_input(p_ship);
+        ship_update(p_ship, GetFrameTime());
+        // Draw calls
         BeginDrawing();
         ClearBackground(RAYWHITE);
-
+        BeginMode3D(p_camera->camera);
+        DrawGrid(10000, 1.0f);
+        DrawModel(p_ship->model, p_ship->actor.position, 1.0f, RAYWHITE);
+        camera_follow(p_camera, p_ship);
+        EndMode3D();
         DrawFPS(10, 10);
+        DrawText(TextFormat("Rotation: %f %f %f %f",
+                            p_ship->actor.rotation.x,
+                            p_ship->actor.rotation.y,
+                            p_ship->actor.rotation.z,
+                            p_ship->actor.rotation.w),
+                 10,
+                 30,
+                 20,
+                 BLACK);
+        DrawText(TextFormat("Position: %f %f %f",
+                            p_ship->actor.position.x,
+                            p_ship->actor.position.y,
+                            p_ship->actor.position.z),
+                 10,
+                 50,
+                 20,
+                 BLACK);
+        DrawText(TextFormat("Velocity: %f %f %f",
+                            p_ship->actor.velocity.x,
+                            p_ship->actor.velocity.y,
+                            p_ship->actor.velocity.z),
+                 10,
+                 70,
+                 20,
+                 BLACK);
+        DrawText(TextFormat("Input: %f %f %f",
+                            p_ship->input_forward,
+                            p_ship->input_left,
+                            p_ship->input_up),
+                 10,
+                 90,
+                 20,
+                 BLACK);
         EndDrawing();
     }
 

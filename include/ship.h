@@ -17,6 +17,12 @@ typedef struct ship_t
     Model      model;
     actor_t    actor;
     movement_t movement_stat;
+    float      smooth_forward;
+    float      smooth_left;
+    float      smooth_up;
+    float      smooth_pitch_down;
+    float      smooth_roll_right;
+    float      smooth_yaw_left;
     float      input_forward;
     float      input_left;
     float      input_up;
@@ -33,5 +39,6 @@ ship_t * ship_init (Vector3      initial_position,
 void     ship_draw (ship_t * p_ship);
 void     ship_update (ship_t * p_ship, float delta_time);
 void     ship_teardown (ship_t * p_ship);
+void     ship_reset (ship_t * p_ship);
 
 #endif
