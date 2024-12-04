@@ -141,6 +141,7 @@ int main (int argc, char ** argv)
     // Initial setup
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "uju raylib");
     SetTargetFPS(60);
+
     camera_t * p_camera = camera_init(
         (Vector3) { 0, 1, -3 }, (Vector3) { 0, 0, 0 }, (Vector3) { 0, 1, 0 });
     movement_t movement_stats = {
@@ -156,10 +157,21 @@ int main (int argc, char ** argv)
         printf("Failed to initialize ship\n");
     }
 
-    Vector2 mouse_delta = { 0, 0 };
+    // add rings thoughout the level
+    Model   ring_model = LoadModelFromMesh(GenMeshTorus(0.1f, 50.0f, 16, 32));
+    Vector3 ring_locations[100] = { 0 };
+
+    for (int i = 0; i < 100; i++)
+    {
+        ring_locations[i] = (Vector3) { GetRandomValue(-500, 500),
+                                        GetRandomValue(-500, 500),
+                                        GetRandomValue(-500, 500) };
+    }
+
     // Main game loop
-    static float timer     = 0.0f;
-    bool         health_up = false;
+    Vector2      mouse_delta = { 0, 0 };
+    static float timer       = 0.0f;
+    bool         health_up   = false;
     while (!WindowShouldClose())
     {
         // every second, take away health
@@ -198,6 +210,10 @@ int main (int argc, char ** argv)
 
         // 3D drawing
         BeginMode3D(p_camera->camera);
+        for (int i = 0; i < 100; i++)
+        {
+            DrawModel(ring_model, ring_locations[i], 1.0f, BLACK);
+        }
         DrawGrid(10000, 1.0f);
         ship_draw(p_ship);
         camera_follow(p_camera, p_ship);
