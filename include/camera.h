@@ -15,15 +15,16 @@ typedef struct camera_t
 } camera_t;
 
 camera_t * camera_init (Vector3 position, Vector3 target, Vector3 up);
-void       camera_follow (camera_t * p_camera, ship_t * p_ship);
-void       camera_move (camera_t * p_camera,
-                        Vector3    position,
-                        Vector3    target,
-                        Vector3    up);
-void       camera_set_position (camera_t * p_camera,
-                                Vector3    position,
-                                Vector3    target,
-                                Vector3    up);
+void camera_follow (camera_t * p_camera, ship_t * p_ship, float delta_time);
+void camera_move (camera_t * p_camera,
+                  Vector3    position,
+                  Vector3    target,
+                  Vector3    up,
+                  float      delta_time);
+void camera_set_position (camera_t * p_camera,
+                          Vector3    position,
+                          Vector3    target,
+                          Vector3    up);
 
 void    camera_teardown (camera_t * p_camera);
 Vector3 camera_get_position (camera_t * p_camera);

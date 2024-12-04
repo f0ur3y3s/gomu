@@ -17,7 +17,8 @@
         "actor.h": "c",
         "utils.h": "c",
         "uju_utils.h": "c",
-        "uju.h": "c"
+        "uju.h": "c",
+        "camera.h": "c"
     },
     "C_Cpp.errorSquiggles": "enabled"
 }

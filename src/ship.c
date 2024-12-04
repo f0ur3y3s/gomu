@@ -23,23 +23,16 @@ ship_t * ship_init (Vector3      initial_position,
         p_ship->model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = texture;
     }
 
-    p_ship->movement_stat     = *p_movement_stats;
-    p_ship->actor.position    = initial_position;
-    p_ship->actor.velocity    = Vector3Zero();
-    p_ship->actor.rotation    = QuaternionIdentity();
-    p_ship->health            = 100.0f;
-    p_ship->smooth_forward    = 0.0f;
-    p_ship->smooth_left       = 0.0f;
-    p_ship->smooth_up         = 0.0f;
-    p_ship->smooth_pitch_down = 0.0f;
-    p_ship->smooth_roll_right = 0.0f;
-    p_ship->smooth_yaw_left   = 0.0f;
-    p_ship->input_forward     = 0.0f;
-    p_ship->input_left        = 0.0f;
-    p_ship->input_up          = 0.0f;
-    p_ship->input_pitch_down  = 0.0f;
-    p_ship->input_roll_right  = 0.0f;
-    p_ship->input_yaw_left    = 0.0f;
+    p_ship->movement_stat        = *p_movement_stats;
+    p_ship->actor.position       = initial_position;
+    p_ship->actor.velocity       = Vector3Zero();
+    p_ship->actor.rotation       = QuaternionIdentity();
+    p_ship->health               = 100.0f;
+    p_ship->energy               = 100.0f;
+    p_ship->is_boosted           = false;
+    p_ship->boost_recharge_timer = 0.0f;
+    delta_reset(&(p_ship->input_delta));
+    delta_reset(&(p_ship->smooth_delta));
 
     status = true;
 
@@ -54,71 +47,105 @@ EXIT:
 
 void ship_update (ship_t * p_ship, float delta_time)
 {
-    p_ship->smooth_forward = float_damp(p_ship->smooth_forward,
-                                        p_ship->input_forward,
-                                        p_ship->movement_stat.engine_accel,
-                                        delta_time);
+    float boost = 1.0f;
 
-    p_ship->smooth_left = float_damp(p_ship->smooth_left,
-                                     p_ship->input_left,
-                                     p_ship->movement_stat.thruster_accel,
-                                     delta_time);
+    if (p_ship->is_boosted && p_ship->energy > 0.0f)
+    {
+        boost = 3.0f;
+        p_ship->energy -= 20.0f * delta_time;
+        p_ship->energy               = Clamp(p_ship->energy, 0.0f, 100.0f);
+        p_ship->boost_recharge_timer = 0.0f;
+    }
+    else
+    {
+        p_ship->boost_recharge_timer += delta_time;
 
-    p_ship->smooth_up = float_damp(p_ship->smooth_up,
-                                   p_ship->input_up,
-                                   p_ship->movement_stat.thruster_accel,
-                                   delta_time);
+        if (p_ship->boost_recharge_timer >= 3.0f)
+        {
+            p_ship->energy += 20.0f * delta_time;
+            p_ship->energy = Clamp(p_ship->energy, 0.0f, 100.0f);
+        }
+    }
 
-    float speed_multiplier    = p_ship->smooth_forward > 0.0f ? 1.0f : 0.5f;
-    float thruster_multiplier = 1.0f;
+    p_ship->smooth_delta.forward
+        = float_damp(p_ship->smooth_delta.forward,
+                     p_ship->input_delta.forward * boost,
+                     p_ship->movement_stat.throttle_response,
+                     delta_time);
+
+    p_ship->smooth_delta.left
+        = float_damp(p_ship->smooth_delta.left,
+                     p_ship->input_delta.left,
+                     p_ship->movement_stat.throttle_response,
+                     delta_time);
+
+    p_ship->smooth_delta.up
+        = float_damp(p_ship->smooth_delta.up,
+                     p_ship->input_delta.up,
+                     p_ship->movement_stat.throttle_response,
+                     delta_time);
+
+    float speed_multiplier = p_ship->smooth_delta.forward > 0.0f ? 1.0f : 0.5f;
 
     Vector3 velocity = Vector3Zero();
-    velocity         = Vector3Add(
-        velocity,
-        Vector3Scale(actor_get_forward(&p_ship->actor),
-                     p_ship->movement_stat.max_speed * p_ship->smooth_forward
-                         * speed_multiplier));
-    velocity = Vector3Add(
-        velocity,
-        Vector3Scale(actor_get_left(&p_ship->actor),
-                     (p_ship->movement_stat.max_speed / 2) * p_ship->smooth_left
-                         * thruster_multiplier));
-    velocity = Vector3Add(
-        velocity,
-        Vector3Scale(actor_get_up(&p_ship->actor),
-                     (p_ship->movement_stat.max_speed / 2) * p_ship->smooth_up
-                         * thruster_multiplier));
+    velocity         = Vector3Add(velocity,
+                          Vector3Scale(actor_get_forward(&p_ship->actor),
+                                       p_ship->movement_stat.max_speed
+                                           * p_ship->smooth_delta.forward
+                                           * speed_multiplier));
+    velocity         = Vector3Add(velocity,
+                          Vector3Scale(actor_get_up(&p_ship->actor),
+                                       p_ship->movement_stat.max_speed * 0.5f
+                                           * p_ship->smooth_delta.up));
+    velocity         = Vector3Add(velocity,
+                          Vector3Scale(actor_get_left(&p_ship->actor),
+                                       p_ship->movement_stat.max_speed * 0.5f
+                                           * p_ship->smooth_delta.left));
 
     p_ship->actor.velocity
-        = vector3_damp(p_ship->actor.velocity, velocity, 0.1f, delta_time);
+        = vector3_damp(p_ship->actor.velocity, velocity, 2.5f, delta_time);
     p_ship->actor.position
         = Vector3Add(p_ship->actor.position,
                      Vector3Scale(p_ship->actor.velocity, delta_time));
 
-    p_ship->smooth_roll_right = float_damp(p_ship->smooth_roll_right,
-                                           p_ship->input_roll_right,
-                                           p_ship->movement_stat.thruster_accel,
-                                           delta_time);
+    p_ship->smooth_delta.roll_right
+        = float_damp(p_ship->smooth_delta.roll_right,
+                     p_ship->input_delta.roll_right,
+                     p_ship->movement_stat.turn_response,
+                     delta_time);
 
-    p_ship->smooth_yaw_left = float_damp(p_ship->smooth_yaw_left,
-                                         p_ship->input_yaw_left,
-                                         p_ship->movement_stat.thruster_accel,
-                                         delta_time);
+    p_ship->smooth_delta.yaw_left
+        = float_damp(p_ship->smooth_delta.yaw_left,
+                     p_ship->input_delta.yaw_left,
+                     p_ship->movement_stat.turn_response,
+                     delta_time);
 
-    p_ship->smooth_pitch_down = float_damp(p_ship->smooth_pitch_down,
-                                           p_ship->input_pitch_down,
-                                           p_ship->movement_stat.thruster_accel,
-                                           delta_time);
+    p_ship->smooth_delta.pitch_down
+        = float_damp(p_ship->smooth_delta.pitch_down,
+                     p_ship->input_delta.pitch_down,
+                     p_ship->movement_stat.turn_response,
+                     delta_time);
 
     actor_rotate_local_euler(&p_ship->actor,
                              (Vector3) { 0, 0, 1 },
-                             p_ship->smooth_roll_right * delta_time * 180);
+                             p_ship->smooth_delta.roll_right * delta_time
+                                 * p_ship->movement_stat.turn_rate);
     actor_rotate_local_euler(&p_ship->actor,
                              (Vector3) { 0, 1, 0 },
-                             p_ship->smooth_yaw_left * delta_time * 90);
+                             p_ship->smooth_delta.yaw_left * delta_time
+                                 * p_ship->movement_stat.turn_rate);
     actor_rotate_local_euler(&p_ship->actor,
                              (Vector3) { 1, 0, 0 },
-                             p_ship->smooth_pitch_down * delta_time * 90);
+                             p_ship->smooth_delta.pitch_down * delta_time
+                                 * p_ship->movement_stat.turn_rate);
+
+    actor_rotate_local_euler(&p_ship->actor,
+                             (Vector3) { 0, 0, -1 },
+                             p_ship->smooth_delta.yaw_left * delta_time * 0.5f
+                                 * p_ship->movement_stat.turn_rate);
+
+    // float visual_bank = (-30 * DEG2RAD * p_ship->smooth_delta.yaw_left)
+    //                     + (-15 * DEG2RAD * p_ship->smooth_delta.left);
 
     Matrix transform = MatrixTranslate(p_ship->actor.position.x,
                                        p_ship->actor.position.y,
@@ -131,7 +158,22 @@ void ship_update (ship_t * p_ship, float delta_time)
 void ship_draw (ship_t * p_ship)
 {
     DrawModel(p_ship->model, (Vector3) { 0.0f, 0.0f, 0.0f }, 1.0f, RAYWHITE);
-    draw_axis(&(p_ship->actor.position));
+#ifdef DEBUG
+    DrawLine3D(
+        p_ship->actor.position,
+        Vector3Add(p_ship->actor.position,
+                   Vector3Scale(actor_get_forward(&p_ship->actor), 2.0f)),
+        RED);
+    DrawLine3D(p_ship->actor.position,
+               Vector3Add(p_ship->actor.position,
+                          Vector3Scale(actor_get_left(&p_ship->actor), 2.0f)),
+               GREEN);
+    DrawLine3D(p_ship->actor.position,
+               Vector3Add(p_ship->actor.position,
+                          Vector3Scale(actor_get_up(&p_ship->actor), 2.0f)),
+               BLUE);
+#endif
+    // draw_axis(&(p_ship->actor.position));
 }
 
 void ship_teardown (ship_t * p_ship)
@@ -142,20 +184,14 @@ void ship_teardown (ship_t * p_ship)
 
 void ship_reset (ship_t * p_ship)
 {
-    p_ship->actor.position    = Vector3Zero();
-    p_ship->actor.velocity    = Vector3Zero();
-    p_ship->actor.rotation    = QuaternionIdentity();
-    p_ship->health            = 100.0f;
-    p_ship->smooth_forward    = 0.0f;
-    p_ship->smooth_left       = 0.0f;
-    p_ship->smooth_up         = 0.0f;
-    p_ship->smooth_pitch_down = 0.0f;
-    p_ship->smooth_roll_right = 0.0f;
-    p_ship->smooth_yaw_left   = 0.0f;
-    p_ship->input_forward     = 0.0f;
-    p_ship->input_left        = 0.0f;
-    p_ship->input_up          = 0.0f;
-    p_ship->input_pitch_down  = 0.0f;
-    p_ship->input_roll_right  = 0.0f;
-    p_ship->input_yaw_left    = 0.0f;
+    p_ship->actor.position       = Vector3Zero();
+    p_ship->actor.velocity       = Vector3Zero();
+    p_ship->actor.rotation       = QuaternionIdentity();
+    p_ship->health               = 100.0f;
+    p_ship->energy               = 100.0f;
+    p_ship->is_boosted           = false;
+    p_ship->boost_recharge_timer = 0.0f;
+
+    delta_reset(&(p_ship->input_delta));
+    delta_reset(&(p_ship->smooth_delta));
 }

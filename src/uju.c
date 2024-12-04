@@ -2,6 +2,8 @@
 
 #define SHIP_MODEL   ASSETS_PATH "lowpoly/ship.gltf"
 #define SHIP_TEXTURE ASSETS_PATH "lowpoly/a16.png"
+#define HIGH_POLY_MODEL \
+    ASSETS_PATH "highres/Intergalactic_Spaceship-(Wavefront).obj"
 
 Vector2 update_aim (ship_t * p_ship, Vector2 * p_out_mouse_delta)
 {
@@ -27,113 +29,73 @@ Vector2 update_aim (ship_t * p_ship, Vector2 * p_out_mouse_delta)
 
     *p_out_mouse_delta = Vector2Add(mouse_delta, screen_center);
 
-    Vector2 aim = Vector2Divide(mouse_delta, (Vector2) { radius, radius });
-    aim.x       = Clamp(aim.x, -1.0f, 1.0f);
-    aim.y       = Clamp(aim.y, -1.0f, 1.0f);
-
-    // printf("Aim: %f %f\n", aim.x, aim.y);
+    Vector2 aim    = Vector2Divide(mouse_delta, (Vector2) { radius, radius });
+    aim.x          = Clamp(aim.x, -1.0f, 1.0f);
+    aim.y          = Clamp(aim.y, -1.0f, 1.0f);
+    float exponent = 2.0f;
+    aim.x          = copysign(pow(fabs(aim.x), exponent), aim.x);
+    aim.y          = copysign(pow(fabs(aim.y), exponent), aim.y);
     return aim;
 }
 
 void update_input (ship_t * p_ship, Vector2 * p_out_mouse_delta)
 {
-    p_ship->input_forward    = 0.0f;
-    p_ship->input_left       = 0.0f;
-    p_ship->input_up         = 0.0f;
-    p_ship->input_pitch_down = 0.0f;
-    p_ship->input_roll_right = 0.0f;
-    p_ship->input_yaw_left   = 0.0f;
+    delta_reset(&(p_ship->input_delta));
 
     if (IsKeyDown(KEY_R))
     {
         ship_reset(p_ship);
     }
 
-    // if (IsKeyDown(KEY_SPACE)) // strafing
-    // {
-    //     if (IsKeyDown(KEY_W))
-    //     {
-    //         p_ship->input_up += 1.0f;
-    //     }
-    //     if (IsKeyDown(KEY_S))
-    //     {
-    //         p_ship->input_up += -1.0f;
-    //     }
-    //     if (IsKeyDown(KEY_A))
-    //     {
-    //         p_ship->input_left += 1.0f;
-    //     }
-    //     if (IsKeyDown(KEY_D))
-    //     {
-    //         p_ship->input_left += -1.0f;
-    //     }
-    // }
-    // else // normal flight controls
-    // {
-    //     if (IsKeyDown(KEY_W))
-    //     {
-    //         p_ship->input_forward += 1.0f;
-    //     }
-    //     if (IsKeyDown(KEY_S))
-    //     {
-    //         p_ship->input_forward += -1.0f;
-    //     }
-    //     if (IsKeyDown(KEY_A))
-    //     {
-    //         p_ship->input_roll_right += -1.0f;
-    //     }
-    //     if (IsKeyDown(KEY_D))
-    //     {
-    //         p_ship->input_roll_right += 1.0f;
-    //     }
-    // }
-    float boost = 1.0f;
-
     if (IsKeyDown(KEY_LEFT_SHIFT))
     {
-        boost = 3.0f;
+        p_ship->is_boosted = true;
+    }
+    else
+    {
+        p_ship->is_boosted = false;
     }
 
     // normal flight controls
     if (IsKeyDown(KEY_W))
     {
-        p_ship->input_forward = 1.0f * boost;
+        p_ship->input_delta.forward += 1.0f;
     }
     if (IsKeyDown(KEY_S))
     {
-        p_ship->input_forward = -1.0f * boost;
+        p_ship->input_delta.forward += -1.0f;
     }
     if (IsKeyDown(KEY_A))
     {
-        p_ship->input_roll_right = -0.5f;
+        p_ship->input_delta.left += 1.0f;
     }
     if (IsKeyDown(KEY_D))
     {
-        p_ship->input_roll_right = 0.5f;
+        p_ship->input_delta.left += -1.0f;
     }
 
-    // strafing left/right up/down
-    if (IsKeyDown(KEY_SPACE))
-    {
-        p_ship->input_up = 1.0f * boost;
-    }
-    if (IsKeyDown(KEY_LEFT_CONTROL))
-    {
-        p_ship->input_up = -1.0f * boost;
-    }
     if (IsKeyDown(KEY_Q))
     {
-        p_ship->input_left = 1.0f * boost;
+        p_ship->input_delta.roll_right = -0.5f;
     }
     if (IsKeyDown(KEY_E))
     {
-        p_ship->input_left = -1.0f * boost;
+        p_ship->input_delta.roll_right = 0.5f;
+    }
+
+    if (IsKeyDown(KEY_SPACE))
+    {
+        p_ship->input_delta.up += 1.0f;
+    }
+    if (IsKeyDown(KEY_LEFT_CONTROL))
+    {
+        p_ship->input_delta.up += -1.0f;
     }
 
     Vector2 aim = update_aim(p_ship, p_out_mouse_delta);
 
-    p_ship->input_yaw_left   = -aim.x;
-    p_ship->input_pitch_down = aim.y;
+    p_ship->input_delta.yaw_left   = -aim.x;
+    p_ship->input_delta.pitch_down = aim.y;
 }
 
 int main (int argc, char ** argv)
@@ -144,10 +106,16 @@ int main (int argc, char ** argv)
 
     camera_t * p_camera = camera_init(
         (Vector3) { 0, 1, -3 }, (Vector3) { 0, 0, 0 }, (Vector3) { 0, 1, 0 });
+    // movement_t movement_stats = {
+    //     .max_speed      = 40.0f,
+    //     .engine_accel   = 20.0f,
+    //     .thruster_accel = 10.0f,
+    // };
     movement_t movement_stats = {
-        .max_speed      = 40.0f,
-        .engine_accel   = 20.0f,
-        .thruster_accel = 10.0f,
+        .max_speed         = 20.0f,
+        .throttle_response = 10.0f,
+        .turn_rate         = 180.0f,
+        .turn_response     = 10.0f,
     };
     ship_t * p_ship = ship_init(
         (Vector3) { 0, 0, 0 }, SHIP_MODEL, SHIP_TEXTURE, &movement_stats);
@@ -174,8 +142,9 @@ int main (int argc, char ** argv)
     bool         health_up   = false;
     while (!WindowShouldClose())
     {
-        // every second, take away health
-        timer += GetFrameTime();
+        float frame_time = GetFrameTime();
+
+        timer += frame_time;
         if (timer >= 1.0f)
         {
             if (health_up)
@@ -198,11 +167,10 @@ int main (int argc, char ** argv)
             }
             timer = 0.0f;
         }
-        // printf("Health: %f\n", p_ship->health);
 
         // Update
         update_input(p_ship, &mouse_delta);
-        ship_update(p_ship, GetFrameTime());
+        ship_update(p_ship, frame_time);
 
         // Draw calls
         BeginDrawing();
@@ -210,19 +178,22 @@ int main (int argc, char ** argv)
 
         // 3D drawing
         BeginMode3D(p_camera->camera);
+
         for (int i = 0; i < 100; i++)
         {
-            DrawModel(ring_model, ring_locations[i], 1.0f, BLACK);
+            DrawModel(ring_model, ring_locations[i], 1.0f, GRAY);
         }
-        DrawGrid(10000, 1.0f);
+
+        DrawGrid(10000, 10.0f);
         ship_draw(p_ship);
-        camera_follow(p_camera, p_ship);
+        camera_follow(p_camera, p_ship, frame_time);
         EndMode3D();
 
         // 2D drawing
         draw_reticle(SCREEN_WIDTH, SCREEN_HEIGHT, DEADZONE);
         draw_mouse(mouse_delta);
         draw_health(SCREEN_WIDTH, SCREEN_HEIGHT, p_ship->health);
+        draw_energy(SCREEN_WIDTH, SCREEN_HEIGHT, p_ship->energy);
         DrawFPS(10, 10);
         DrawText(TextFormat("Rotation: %f %f %f %f",
                             p_ship->actor.rotation.x,
@@ -250,9 +221,9 @@ int main (int argc, char ** argv)
                  20,
                  BLACK);
         DrawText(TextFormat("Input: %f %f %f",
-                            p_ship->input_forward,
-                            p_ship->input_left,
-                            p_ship->input_up),
+                            p_ship->input_delta.forward,
+                            p_ship->input_delta.left,
+                            p_ship->input_delta.up),
                  10,
                  90,
                  20,
@@ -260,6 +231,9 @@ int main (int argc, char ** argv)
         EndDrawing();
     }
 
+    ship_teardown(p_ship);
+    camera_teardown(p_camera);
+    UnloadModel(ring_model);
     CloseWindow();
 
     return 0;
