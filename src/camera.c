@@ -24,7 +24,7 @@ camera_t * camera_init (Vector3 position, Vector3 target, Vector3 up)
     return p_camera;
 }
 
-void camera_follow (camera_t * p_camera, ship_t * p_ship)
+void camera_follow (camera_t * p_camera, ship_t * p_ship, float delta_time)
 {
     Vector3 position
         = actor_transform_point(&p_ship->actor, (Vector3) { 0, 1, -3 });
@@ -33,20 +33,23 @@ void camera_follow (camera_t * p_camera, ship_t * p_ship)
     Vector3 target = Vector3Add(p_ship->actor.position, ship_forwards);
     Vector3 up     = actor_get_up(&p_ship->actor);
 
-    camera_move(p_camera, position, target, up);
+    camera_move(p_camera, position, target, up, delta_time);
 }
 
 void camera_move (camera_t * p_camera,
                   Vector3    position,
                   Vector3    target,
-                  Vector3    up)
+                  Vector3    up,
+                  float      delta_time)
 {
-    p_camera->camera.position = vector3_damp(
-        p_camera->camera.position, position, 10.0f, GetFrameTime());
+    p_camera->camera.position
+        = vector3_damp(p_camera->camera.position, position, 25.0f, delta_time);
     p_camera->camera.target
-        = vector3_damp(p_camera->camera.target, target, 5.0f, GetFrameTime());
+        = vector3_damp(p_camera->camera.target, target, 10.0f, delta_time);
+    // p_camera->camera.position = position;
+    // p_camera->camera.target   = target;
     p_camera->camera.up
-        = vector3_damp(p_camera->camera.up, up, 5.0f, GetFrameTime());
+        = vector3_damp(p_camera->camera.up, up, 5.0f, delta_time);
 }
 
 void camera_set_position (camera_t * p_camera,

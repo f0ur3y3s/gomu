@@ -5,25 +5,48 @@
 #include "actor.h"
 #include "uju_utils.h"
 
+// typedef struct movement_t
+// {
+//     float max_speed;
+//     float engine_accel;
+//     float thruster_accel;
+// } movement_t;
+
 typedef struct movement_t
 {
     float max_speed;
-    float engine_accel;
-    float thruster_accel;
+    float throttle_response;
+    float turn_rate;
+    float turn_response;
 } movement_t;
 
+typedef struct delta_t
+{
+    float forward;
+    float left;
+    float up;
+    float pitch_down;
+    float roll_right;
+    float yaw_left;
+} delta_t;
+
+inline void delta_reset (delta_t * p_delta)
+{
+    *p_delta = (delta_t) { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
+}
+
 typedef struct ship_t
+
 {
     Model      model;
     actor_t    actor;
     movement_t movement_stat;
-    float      input_forward;
-    float      input_left;
-    float      input_up;
-    float      input_pitch_down;
-    float      input_roll_right;
-    float      input_yaw_left;
-
+    delta_t    input_delta;
+    delta_t    smooth_delta;
+    float      health;
+    float      energy;
+    float      boost_recharge_timer;
+    bool       is_boosted;
 } ship_t;
 
 ship_t * ship_init (Vector3      initial_position,
@@ -33,5 +56,6 @@ ship_t * ship_init (Vector3      initial_position,
 void     ship_draw (ship_t * p_ship);
 void     ship_update (ship_t * p_ship, float delta_time);
 void     ship_teardown (ship_t * p_ship);
+void     ship_reset (ship_t * p_ship);
 
 #endif
