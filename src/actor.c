@@ -36,3 +36,12 @@ void actor_rotate_local_euler (actor_t * p_actor, Vector3 axis, float degrees)
     p_actor->rotation       = QuaternionMultiply(
         p_actor->rotation, QuaternionFromAxisAngle(axis, converted_degrees));
 }
+
+Vector3 actor_transform_point (actor_t * p_actor, Vector3 point)
+{
+    Matrix new_position = MatrixTranslate(
+        p_actor->position.x, p_actor->position.y, p_actor->position.z);
+    Matrix new_rotation = QuaternionToMatrix(p_actor->rotation);
+    Matrix applied      = MatrixMultiply(new_rotation, new_position);
+    return Vector3Transform(point, applied);
+}

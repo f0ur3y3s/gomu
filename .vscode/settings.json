@@ -13,6 +13,11 @@
         "xutility": "c",
         "ship.h": "c",
         "optional": "c",
-        "stdio.h": "c"
-    }
+        "stdio.h": "c",
+        "actor.h": "c",
+        "utils.h": "c",
+        "uju_utils.h": "c",
+        "uju.h": "c"
+    },
+    "C_Cpp.errorSquiggles": "enabled"
 }

@@ -18,5 +18,6 @@ Vector3 actor_get_right (actor_t * p_actor);
 Vector3 actor_get_up (actor_t * p_actor);
 Vector3 actor_get_down (actor_t * p_actor);
 void actor_rotate_local_euler (actor_t * p_actor, Vector3 axis, float degrees);
+Vector3 actor_transform_point (actor_t * p_actor, Vector3 point);
 
 #endif

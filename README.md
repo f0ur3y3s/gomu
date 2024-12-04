@@ -21,5 +21,7 @@ Uju (우주) is the Korean word for space/outerspace.
 
 ## Resources
 
+Heavily inspired by [Ergo](https://github.com/brihernandez/Ergo)
+
 - [Travis Vroman](https://www.youtube.com/watch?v=teg23SJlyl8)
-- [Vulkan Tutorial](https://vulkan-tutorial.com/)
+- [Vulkan Tutorial](https://vulkan-tutorial.com/)A
