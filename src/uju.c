@@ -101,19 +101,17 @@ void update_input (ship_t * p_ship, Vector2 * p_out_mouse_delta)
 int main (int argc, char ** argv)
 {
     // Initial setup
+    SetConfigFlags(FLAG_MSAA_4X_HINT | FLAG_VSYNC_HINT);
+
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "uju raylib");
     SetTargetFPS(60);
 
     camera_t * p_camera = camera_init(
         (Vector3) { 0, 1, -3 }, (Vector3) { 0, 0, 0 }, (Vector3) { 0, 1, 0 });
-    // movement_t movement_stats = {
-    //     .max_speed      = 40.0f,
-    //     .engine_accel   = 20.0f,
-    //     .thruster_accel = 10.0f,
-    // };
+
     movement_t movement_stats = {
         .max_speed         = 20.0f,
-        .throttle_response = 10.0f,
+        .throttle_response = 20.0f,
         .turn_rate         = 180.0f,
         .turn_response     = 10.0f,
     };
@@ -126,15 +124,15 @@ int main (int argc, char ** argv)
     }
 
     // add rings thoughout the level
-    Model   ring_model = LoadModelFromMesh(GenMeshTorus(0.1f, 50.0f, 16, 32));
-    Vector3 ring_locations[100] = { 0 };
+    // Model   ring_model = LoadModelFromMesh(GenMeshTorus(0.1f, 50.0f, 16,
+    // 32)); Vector3 ring_locations[100] = { 0 };
 
-    for (int i = 0; i < 100; i++)
-    {
-        ring_locations[i] = (Vector3) { GetRandomValue(-500, 500),
-                                        GetRandomValue(-500, 500),
-                                        GetRandomValue(-500, 500) };
-    }
+    // for (int i = 0; i < 100; i++)
+    // {
+    //     ring_locations[i] = (Vector3) { GetRandomValue(-500, 500),
+    //                                     GetRandomValue(-500, 500),
+    //                                     GetRandomValue(-500, 500) };
+    // }
 
     // Main game loop
     Vector2      mouse_delta = { 0, 0 };
@@ -174,17 +172,24 @@ int main (int argc, char ** argv)
 
         // Draw calls
         BeginDrawing();
-        ClearBackground(RAYWHITE);
+        // ClearBackground(RAYWHITE);
+        ClearBackground((Color) { 14, 19, 45, 200 });
 
         // 3D drawing
         BeginMode3D(p_camera->camera);
 
-        for (int i = 0; i < 100; i++)
-        {
-            DrawModel(ring_model, ring_locations[i], 1.0f, GRAY);
-        }
+        // for (int i = 0; i < 100; i++)
+        // {
+        //     DrawModel(ring_model, ring_locations[i], 1.0f, GRAY);
+        //     // apply random rotation to ring model
+        //     Matrix transform
+        //         = MatrixRotateXYZ((Vector3) { GetRandomValue(0, 360),
+        //                                       GetRandomValue(0, 360),
+        //                                       GetRandomValue(0, 360) });
+        //     ring_model.transform = transform;
+        // }
 
-        DrawGrid(10000, 10.0f);
+        DrawGrid(1000, 10.0f);
         ship_draw(p_ship);
         camera_follow(p_camera, p_ship, frame_time);
         EndMode3D();
@@ -203,7 +208,7 @@ int main (int argc, char ** argv)
                  10,
                  30,
                  20,
-                 BLACK);
+                 FOREGROUND);
         DrawText(TextFormat("Position: %f %f %f",
                             p_ship->actor.position.x,
                             p_ship->actor.position.y,
@@ -211,7 +216,7 @@ int main (int argc, char ** argv)
                  10,
                  50,
                  20,
-                 BLACK);
+                 FOREGROUND);
         DrawText(TextFormat("Velocity: %f %f %f",
                             p_ship->actor.velocity.x,
                             p_ship->actor.velocity.y,
@@ -219,7 +224,7 @@ int main (int argc, char ** argv)
                  10,
                  70,
                  20,
-                 BLACK);
+                 FOREGROUND);
         DrawText(TextFormat("Input: %f %f %f",
                             p_ship->input_delta.forward,
                             p_ship->input_delta.left,
@@ -227,13 +232,13 @@ int main (int argc, char ** argv)
                  10,
                  90,
                  20,
-                 BLACK);
+                 FOREGROUND);
         EndDrawing();
     }
 
     ship_teardown(p_ship);
     camera_teardown(p_camera);
-    UnloadModel(ring_model);
+    // UnloadModel(ring_model);
     CloseWindow();
 
     return 0;

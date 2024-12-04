@@ -43,6 +43,7 @@ typedef struct ship_t
     movement_t movement_stat;
     delta_t    input_delta;
     delta_t    smooth_delta;
+    float      visual_bank;
     float      health;
     float      energy;
     float      boost_recharge_timer;

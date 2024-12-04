@@ -4,6 +4,8 @@
 #include "raylib.h"
 #include "raymath.h"
 
+#define FOREGROUND WHITE
+
 inline float float_damp (float from, float to, float speed, float delta_time)
 {
     return Lerp(from, to, 1.0f - expf(-speed * delta_time));
