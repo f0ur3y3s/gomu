@@ -5,6 +5,7 @@
 #include "raymath.h"
 #include "ship.h"
 #include "camera.h"
+#include "hud.h"
 #include <stdlib.h>
 #include <stdio.h>
 #ifdef DDEBUG
@@ -14,6 +15,6 @@
 #define SCREEN_WIDTH  1920
 #define SCREEN_HEIGHT 1080
 #define SCREEN_CENTER ((Vector2) { SCREEN_WIDTH / 2.0f, SCREEN_HEIGHT / 2.0f })
-#define DEADZONE      20.0f
+#define DEADZONE      30.0f
 
 #endif

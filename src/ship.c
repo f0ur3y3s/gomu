@@ -27,6 +27,7 @@ ship_t * ship_init (Vector3      initial_position,
     p_ship->actor.position    = initial_position;
     p_ship->actor.velocity    = Vector3Zero();
     p_ship->actor.rotation    = QuaternionIdentity();
+    p_ship->health            = 100.0f;
     p_ship->smooth_forward    = 0.0f;
     p_ship->smooth_left       = 0.0f;
     p_ship->smooth_up         = 0.0f;
@@ -69,7 +70,7 @@ void ship_update (ship_t * p_ship, float delta_time)
                                    delta_time);
 
     float speed_multiplier    = p_ship->smooth_forward > 0.0f ? 1.0f : 0.5f;
-    float thruster_multiplier = 0.5f;
+    float thruster_multiplier = 1.0f;
 
     Vector3 velocity = Vector3Zero();
     velocity         = Vector3Add(
@@ -93,22 +94,44 @@ void ship_update (ship_t * p_ship, float delta_time)
     p_ship->actor.position
         = Vector3Add(p_ship->actor.position,
                      Vector3Scale(p_ship->actor.velocity, delta_time));
-    // p_ship->actor.position = Vector3Add(
-    //     p_ship->actor.position,
-    //     Vector3Scale(actor_get_forward(&p_ship->actor), smooth_forward));
-    // p_ship->actor.position
-    //     = Vector3Add(p_ship->actor.position,
-    //                  Vector3Scale(actor_get_left(&p_ship->actor),
-    //                  smooth_left));
-    // p_ship->actor.position
-    //     = Vector3Add(p_ship->actor.position,
-    //                  Vector3Scale(actor_get_up(&p_ship->actor), smooth_up));
+
+    p_ship->smooth_roll_right = float_damp(p_ship->smooth_roll_right,
+                                           p_ship->input_roll_right,
+                                           p_ship->movement_stat.thruster_accel,
+                                           delta_time);
+
+    p_ship->smooth_yaw_left = float_damp(p_ship->smooth_yaw_left,
+                                         p_ship->input_yaw_left,
+                                         p_ship->movement_stat.thruster_accel,
+                                         delta_time);
+
+    p_ship->smooth_pitch_down = float_damp(p_ship->smooth_pitch_down,
+                                           p_ship->input_pitch_down,
+                                           p_ship->movement_stat.thruster_accel,
+                                           delta_time);
+
+    actor_rotate_local_euler(&p_ship->actor,
+                             (Vector3) { 0, 0, 1 },
+                             p_ship->smooth_roll_right * delta_time * 180);
+    actor_rotate_local_euler(&p_ship->actor,
+                             (Vector3) { 0, 1, 0 },
+                             p_ship->smooth_yaw_left * delta_time * 90);
+    actor_rotate_local_euler(&p_ship->actor,
+                             (Vector3) { 1, 0, 0 },
+                             p_ship->smooth_pitch_down * delta_time * 90);
+
+    Matrix transform = MatrixTranslate(p_ship->actor.position.x,
+                                       p_ship->actor.position.y,
+                                       p_ship->actor.position.z);
+    transform
+        = MatrixMultiply(QuaternionToMatrix(p_ship->actor.rotation), transform);
+    p_ship->model.transform = transform;
 }
 
 void ship_draw (ship_t * p_ship)
 {
     DrawModel(p_ship->model, (Vector3) { 0.0f, 0.0f, 0.0f }, 1.0f, RAYWHITE);
-    draw_axis(&((p_ship->actor).position));
+    draw_axis(&(p_ship->actor.position));
 }
 
 void ship_teardown (ship_t * p_ship)
@@ -122,6 +145,7 @@ void ship_reset (ship_t * p_ship)
     p_ship->actor.position    = Vector3Zero();
     p_ship->actor.velocity    = Vector3Zero();
     p_ship->actor.rotation    = QuaternionIdentity();
+    p_ship->health            = 100.0f;
     p_ship->smooth_forward    = 0.0f;
     p_ship->smooth_left       = 0.0f;
     p_ship->smooth_up         = 0.0f;

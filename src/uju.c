@@ -3,7 +3,7 @@
 #define SHIP_MODEL   ASSETS_PATH "lowpoly/ship.gltf"
 #define SHIP_TEXTURE ASSETS_PATH "lowpoly/a16.png"
 
-Vector2 update_aim (ship_t * p_ship)
+Vector2 update_aim (ship_t * p_ship, Vector2 * p_out_mouse_delta)
 {
     Vector2 mouse_delta   = GetMousePosition();
     Vector2 screen_center = { SCREEN_WIDTH / 2.0f, SCREEN_HEIGHT / 2.0f };
@@ -11,76 +11,129 @@ Vector2 update_aim (ship_t * p_ship)
 
     if (Vector2Length(mouse_delta) < DEADZONE)
     {
-        return;
+        *p_out_mouse_delta = screen_center;
+        return (Vector2) { 0, 0 };
     }
 
     float max_size
         = SCREEN_WIDTH > SCREEN_HEIGHT ? SCREEN_HEIGHT : SCREEN_WIDTH;
-    float radius = max_size / 3.0f;
+    float radius       = max_size / 3.0f;
+    float delta_length = Vector2Length(mouse_delta);
 
-    if (Vector2Length(mouse_delta) > radius)
+    if (delta_length > radius)
     {
-        Vector2 direction = Vector2Subtract(mouse_delta, screen_center);
-        direction         = Vector2Normalize(direction);
-        direction         = Vector2Scale(direction, radius);
-        mouse_delta       = Vector2Add(screen_center, direction);
+        mouse_delta = Vector2Scale(Vector2Normalize(mouse_delta), radius);
     }
 
-    Vector2 aim = Vector2Subtract(mouse_delta, screen_center);
-    aim         = Vector2Normalize(aim);
+    *p_out_mouse_delta = Vector2Add(mouse_delta, screen_center);
+
+    Vector2 aim = Vector2Divide(mouse_delta, (Vector2) { radius, radius });
+    aim.x       = Clamp(aim.x, -1.0f, 1.0f);
+    aim.y       = Clamp(aim.y, -1.0f, 1.0f);
+
+    // printf("Aim: %f %f\n", aim.x, aim.y);
     return aim;
-    // float base_sensitivity = 0.5f;
-    // float exponent         = 2.0f;
-    // float scale_factor     = powf(Vector2Length(mouse_delta) / radius,
-    // exponent)
-    //                      * base_sensitivity;
-
-    // if (Vector2Length(mouse_delta) > radius)
-    // {
-    //     scale_factor = 1.0f;
-    // }
-
-    // aim.x = aim.x * scale_factor;
-    // aim.y = aim.y * scale_factor;
-
-    // actor_rotate_local_euler(&p_ship->actor, (Vector3) { 0, 1, 0 }, -aim.x);
-    // actor_rotate_local_euler(&p_ship->actor, (Vector3) { 1, 0, 0 }, -aim.y);
 }
 
-void update_input (ship_t * p_ship)
+void update_input (ship_t * p_ship, Vector2 * p_out_mouse_delta)
 {
-    p_ship->input_forward = 0.0f;
-    p_ship->input_left    = 0.0f;
-    p_ship->input_up      = 0.0f;
+    p_ship->input_forward    = 0.0f;
+    p_ship->input_left       = 0.0f;
+    p_ship->input_up         = 0.0f;
+    p_ship->input_pitch_down = 0.0f;
+    p_ship->input_roll_right = 0.0f;
+    p_ship->input_yaw_left   = 0.0f;
 
     if (IsKeyDown(KEY_R))
     {
         ship_reset(p_ship);
     }
+
+    // if (IsKeyDown(KEY_SPACE)) // strafing
+    // {
+    //     if (IsKeyDown(KEY_W))
+    //     {
+    //         p_ship->input_up += 1.0f;
+    //     }
+    //     if (IsKeyDown(KEY_S))
+    //     {
+    //         p_ship->input_up += -1.0f;
+    //     }
+    //     if (IsKeyDown(KEY_A))
+    //     {
+    //         p_ship->input_left += 1.0f;
+    //     }
+    //     if (IsKeyDown(KEY_D))
+    //     {
+    //         p_ship->input_left += -1.0f;
+    //     }
+    // }
+    // else // normal flight controls
+    // {
+    //     if (IsKeyDown(KEY_W))
+    //     {
+    //         p_ship->input_forward += 1.0f;
+    //     }
+    //     if (IsKeyDown(KEY_S))
+    //     {
+    //         p_ship->input_forward += -1.0f;
+    //     }
+    //     if (IsKeyDown(KEY_A))
+    //     {
+    //         p_ship->input_roll_right += -1.0f;
+    //     }
+    //     if (IsKeyDown(KEY_D))
+    //     {
+    //         p_ship->input_roll_right += 1.0f;
+    //     }
+    // }
+    float boost = 1.0f;
+
+    if (IsKeyDown(KEY_LEFT_SHIFT))
+    {
+        boost = 3.0f;
+    }
+
+    // normal flight controls
     if (IsKeyDown(KEY_W))
     {
-        p_ship->input_forward = 1.0f;
+        p_ship->input_forward = 1.0f * boost;
     }
     if (IsKeyDown(KEY_S))
     {
-        p_ship->input_forward = -1.0f;
+        p_ship->input_forward = -1.0f * boost;
     }
     if (IsKeyDown(KEY_A))
     {
-        p_ship->input_left = 1.0f;
+        p_ship->input_roll_right = -0.5f;
     }
     if (IsKeyDown(KEY_D))
     {
-        p_ship->input_left = -1.0f;
+        p_ship->input_roll_right = 0.5f;
     }
+
+    // strafing left/right up/down
     if (IsKeyDown(KEY_SPACE))
     {
-        p_ship->input_up = 1.0f;
+        p_ship->input_up = 1.0f * boost;
     }
-    if (IsKeyDown(KEY_LEFT_SHIFT))
+    if (IsKeyDown(KEY_LEFT_CONTROL))
     {
-        p_ship->input_up = -1.0f;
+        p_ship->input_up = -1.0f * boost;
     }
+    if (IsKeyDown(KEY_Q))
+    {
+        p_ship->input_left = 1.0f * boost;
+    }
+    if (IsKeyDown(KEY_E))
+    {
+        p_ship->input_left = -1.0f * boost;
+    }
+
+    Vector2 aim = update_aim(p_ship, p_out_mouse_delta);
+
+    p_ship->input_yaw_left   = -aim.x;
+    p_ship->input_pitch_down = aim.y;
 }
 
 int main (int argc, char ** argv)
@@ -91,9 +144,9 @@ int main (int argc, char ** argv)
     camera_t * p_camera = camera_init(
         (Vector3) { 0, 1, -3 }, (Vector3) { 0, 0, 0 }, (Vector3) { 0, 1, 0 });
     movement_t movement_stats = {
-        .max_speed      = 50.0f,
+        .max_speed      = 40.0f,
         .engine_accel   = 20.0f,
-        .thruster_accel = 5.0f,
+        .thruster_accel = 10.0f,
     };
     ship_t * p_ship = ship_init(
         (Vector3) { 0, 0, 0 }, SHIP_MODEL, SHIP_TEXTURE, &movement_stats);
@@ -103,21 +156,57 @@ int main (int argc, char ** argv)
         printf("Failed to initialize ship\n");
     }
 
-    int count = 0;
+    Vector2 mouse_delta = { 0, 0 };
     // Main game loop
+    static float timer     = 0.0f;
+    bool         health_up = false;
     while (!WindowShouldClose())
     {
+        // every second, take away health
+        timer += GetFrameTime();
+        if (timer >= 1.0f)
+        {
+            if (health_up)
+            {
+                p_ship->health += 10.0f;
+
+                if (p_ship->health >= 100.0f)
+                {
+                    health_up = false;
+                }
+            }
+            else
+            {
+                p_ship->health -= 10.0f;
+
+                if (p_ship->health <= 0.0f)
+                {
+                    health_up = true;
+                }
+            }
+            timer = 0.0f;
+        }
+        // printf("Health: %f\n", p_ship->health);
+
         // Update
-        update_input(p_ship);
+        update_input(p_ship, &mouse_delta);
         ship_update(p_ship, GetFrameTime());
+
         // Draw calls
         BeginDrawing();
         ClearBackground(RAYWHITE);
+
+        // 3D drawing
         BeginMode3D(p_camera->camera);
         DrawGrid(10000, 1.0f);
-        DrawModel(p_ship->model, p_ship->actor.position, 1.0f, RAYWHITE);
+        ship_draw(p_ship);
         camera_follow(p_camera, p_ship);
         EndMode3D();
+
+        // 2D drawing
+        draw_reticle(SCREEN_WIDTH, SCREEN_HEIGHT, DEADZONE);
+        draw_mouse(mouse_delta);
+        draw_health(SCREEN_WIDTH, SCREEN_HEIGHT, p_ship->health);
         DrawFPS(10, 10);
         DrawText(TextFormat("Rotation: %f %f %f %f",
                             p_ship->actor.rotation.x,
@@ -159,25 +248,6 @@ int main (int argc, char ** argv)
 
     return 0;
 }
-
-// bool draw_reticle (const int   screen_width,
-//                    const int   screen_height,
-//                    const float deadzone)
-// {
-//     if ((0 >= screen_width) || (0 >= screen_height) || (0 >= deadzone))
-//     {
-//         return false;
-//     }
-
-//     float max_size
-//         = screen_width > screen_height ? screen_height : screen_width;
-//     int center_x = screen_width / 2;
-//     int center_y = screen_height / 2;
-
-//     DrawCircleLines(center_x, center_y, max_size / 3.0f, Fade(RED, 0.5f));
-//     DrawCircleLines(center_x, center_y, deadzone, Fade(RED, 0.5f));
-//     return true;
-// }
 
 // void calculate_aim (Vector2 * p_mouse_delta, Vector3 * p_rotation)
 // {

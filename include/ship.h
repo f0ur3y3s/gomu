@@ -17,6 +17,7 @@ typedef struct ship_t
     Model      model;
     actor_t    actor;
     movement_t movement_stat;
+    float      health;
     float      smooth_forward;
     float      smooth_left;
     float      smooth_up;

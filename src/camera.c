@@ -41,10 +41,13 @@ void camera_move (camera_t * p_camera,
                   Vector3    target,
                   Vector3    up)
 {
-    p_camera->camera.position = vector3_damp(
-        p_camera->camera.position, position, 10.0f, GetFrameTime());
-    p_camera->camera.target
-        = vector3_damp(p_camera->camera.target, target, 5.0f, GetFrameTime());
+    // p_camera->camera.position = vector3_damp(
+    //     p_camera->camera.position, position, 15.0f, GetFrameTime());
+    // p_camera->camera.target
+    //     = vector3_damp(p_camera->camera.target, target, 5.0f,
+    //     GetFrameTime());
+    p_camera->camera.position = position;
+    p_camera->camera.target   = target;
     p_camera->camera.up
         = vector3_damp(p_camera->camera.up, up, 5.0f, GetFrameTime());
 }
