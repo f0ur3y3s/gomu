@@ -14,8 +14,6 @@ Ship::Ship (Vector3      initial_position,
     rotation = QuaternionIdentity();
 
     movement_stat = *p_movement_stats;
-    input_delta   = { 0 };
-    smooth_delta  = { 0 };
 
     is_boosted = false;
 }
@@ -44,8 +42,8 @@ void Ship::reset ()
     position     = Vector3Zero();
     velocity     = Vector3Zero();
     rotation     = QuaternionIdentity();
-    input_delta  = { 0 };
-    smooth_delta = { 0 };
+    input_delta  = Delta();
+    smooth_delta = Delta();
     visual_bank  = 0.0f;
     health       = 100.0f;
     energy       = 100.0f;
