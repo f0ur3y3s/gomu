@@ -53,7 +53,7 @@ public:
     ~Ship ();
 
     void draw ();
-    void update (Ship & p_ship);
+    void update (float delta_time);
     void reset ();
 
 private:

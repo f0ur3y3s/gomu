@@ -12,7 +12,7 @@ public:
     HUD (float screen_width, float screen_height, float aim_deadzone);
 
     void draw (Vector2 mouse_delta);
-    void HUD::update (Ship & p_ship);
+    void update (Ship & p_ship);
 
 private:
     float   radius        = 0;
