@@ -18,7 +18,8 @@
         "utils.h": "c",
         "uju_utils.h": "c",
         "uju.h": "c",
-        "camera.h": "c"
+        "camera.h": "c",
+        "raylib.h": "c"
     },
     "C_Cpp.errorSquiggles": "enabled"
 }

@@ -27,6 +27,7 @@ ship_t * ship_init (Vector3      initial_position,
     p_ship->actor.position       = initial_position;
     p_ship->actor.velocity       = Vector3Zero();
     p_ship->actor.rotation       = QuaternionIdentity();
+    p_ship->visual_bank          = 0.0f;
     p_ship->health               = 100.0f;
     p_ship->energy               = 100.0f;
     p_ship->is_boosted           = false;
@@ -52,7 +53,7 @@ void ship_update (ship_t * p_ship, float delta_time)
     if (p_ship->is_boosted && p_ship->energy > 0.0f)
     {
         boost = 3.0f;
-        p_ship->energy -= 20.0f * delta_time;
+        p_ship->energy -= 10.0f * delta_time;
         p_ship->energy               = Clamp(p_ship->energy, 0.0f, 100.0f);
         p_ship->boost_recharge_timer = 0.0f;
     }
@@ -144,12 +145,17 @@ void ship_update (ship_t * p_ship, float delta_time)
                              p_ship->smooth_delta.yaw_left * delta_time * 0.5f
                                  * p_ship->movement_stat.turn_rate);
 
-    // float visual_bank = (-30 * DEG2RAD * p_ship->smooth_delta.yaw_left)
-    //                     + (-15 * DEG2RAD * p_ship->smooth_delta.left);
+    float visual_bank = (-30 * DEG2RAD * p_ship->smooth_delta.yaw_left)
+                        + (-15 * DEG2RAD * p_ship->smooth_delta.left);
+    p_ship->visual_bank
+        = float_damp(p_ship->visual_bank, visual_bank, 10.0f, delta_time);
+    Quaternion visual_rotation
+        = QuaternionFromAxisAngle((Vector3) { 0, 0, 1 }, p_ship->visual_bank);
 
     Matrix transform = MatrixTranslate(p_ship->actor.position.x,
                                        p_ship->actor.position.y,
                                        p_ship->actor.position.z);
+    transform = MatrixMultiply(QuaternionToMatrix(visual_rotation), transform);
     transform
         = MatrixMultiply(QuaternionToMatrix(p_ship->actor.rotation), transform);
     p_ship->model.transform = transform;
@@ -187,6 +193,7 @@ void ship_reset (ship_t * p_ship)
     p_ship->actor.position       = Vector3Zero();
     p_ship->actor.velocity       = Vector3Zero();
     p_ship->actor.rotation       = QuaternionIdentity();
+    p_ship->visual_bank          = 0.0f;
     p_ship->health               = 100.0f;
     p_ship->energy               = 100.0f;
     p_ship->is_boosted           = false;
@@ -194,4 +201,9 @@ void ship_reset (ship_t * p_ship)
 
     delta_reset(&(p_ship->input_delta));
     delta_reset(&(p_ship->smooth_delta));
+}
+
+void delta_reset (delta_t * p_delta)
+{
+    *p_delta = (delta_t) { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
 }

@@ -3,6 +3,8 @@
 
 #include "raylib.h"
 #include "raymath.h"
+#include "uju_utils.h"
+
 // functions to draw hud
 // reticle
 // aim
