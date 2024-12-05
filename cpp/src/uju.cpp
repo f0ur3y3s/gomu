@@ -7,6 +7,8 @@ int main (void)
 {
     SetConfigFlags(FLAG_MSAA_4X_HINT | FLAG_VSYNC_HINT);
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "uju raylib");
+    InitAudioDevice();
+
     SetTargetFPS(60);
 
     movement_t movement_stats = {
@@ -16,10 +18,12 @@ int main (void)
         10.0f   // turn_response
     };
 
-    Ship      ship   = Ship(Vector3 { 0.0f, 0.0f, 0.0f },
+    Ship ship = Ship(Vector3 { 0.0f, 0.0f, 0.0f },
                      SHIP_MODEL,
                      SHIP_TEXTURE,
+                     ENGINE_AUDIO,
                      &movement_stats);
+
     UJUCamera camera = UJUCamera(Vector3 { 0.0f, 1.0f, -3.0f },
                                  Vector3Zero(),
                                  Vector3 { 0.0f, 1.0f, 0.0f });
@@ -34,7 +38,9 @@ int main (void)
         update_input(ship, &mouse_delta);
 
         float frame_time = GetFrameTime();
+
         ship.update(frame_time);
+
         camera.follow(ship, frame_time);
         hud.update(ship);
 
@@ -44,8 +50,11 @@ int main (void)
         camera.draw_begin();
         DrawGrid(1000, 1.0f);
         ship.draw();
+
         camera.draw_end();
+
         hud.draw(mouse_delta);
+        // draw a line to the npc ship
         DrawFPS(10, 10);
         DrawText(TextFormat("Rotation: %f %f %f %f",
                             ship.rotation.x,
@@ -88,6 +97,7 @@ int main (void)
         EndDrawing();
     }
 
+    CloseAudioDevice();
     CloseWindow();
     return 0;
 }
@@ -147,11 +157,17 @@ static void update_input (Ship & p_ship, Vector2 * p_out_mouse_delta)
     // normal flight controls
     if (IsKeyDown(KEY_W))
     {
+        ResumeMusicStream(p_ship.engine_audio);
         p_ship.input_delta.forward += 1.0f;
     }
-    if (IsKeyDown(KEY_S))
+    else if (IsKeyDown(KEY_S))
     {
+        ResumeMusicStream(p_ship.engine_audio);
         p_ship.input_delta.forward += -1.0f;
+    }
+    else
+    {
+        PauseMusicStream(p_ship.engine_audio);
     }
     if (IsKeyDown(KEY_A))
     {

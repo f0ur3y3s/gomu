@@ -18,5 +18,7 @@
 
 #define SHIP_MODEL   ASSETS_PATH "lowpoly/ship.gltf"
 #define SHIP_TEXTURE ASSETS_PATH "lowpoly/a16.png"
+#define ENGINE_AUDIO ASSETS_PATH "audio/engine.mp3"
+#define BOOST_AUDIO ASSETS_PATH "audio/boost.mp3"
 
 #endif

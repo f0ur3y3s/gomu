@@ -18,7 +18,16 @@ typedef struct movement_t
 class Delta
 {
 public:
-    void  reset ();
+    void reset ()
+    {
+        forward    = 0.0f;
+        left       = 0.0f;
+        up         = 0.0f;
+        pitch_down = 0.0f;
+        roll_right = 0.0f;
+        yaw_left   = 0.0f;
+    };
+
     float forward    = 0.0f;
     float left       = 0.0f;
     float up         = 0.0f;
@@ -26,16 +35,6 @@ public:
     float roll_right = 0.0f;
     float yaw_left   = 0.0f;
 };
-
-void Delta::reset ()
-{
-    forward    = 0.0f;
-    left       = 0.0f;
-    up         = 0.0f;
-    pitch_down = 0.0f;
-    roll_right = 0.0f;
-    yaw_left   = 0.0f;
-}
 
 class Ship : public Actor
 {
@@ -49,12 +48,14 @@ public:
     Ship (Vector3      initial_position,
           const char * p_model_path,
           const char * p_texture_path,
+          const char * p_audio_path,
           movement_t * p_movement_stats);
     ~Ship ();
 
     void draw ();
     void update (float delta_time);
     void reset ();
+    Music      engine_audio;
 
 private:
     Model      model;

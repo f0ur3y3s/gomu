@@ -3,10 +3,14 @@
 Ship::Ship (Vector3      initial_position,
             const char * p_model_path,
             const char * p_texture_path,
+            const char * p_audio_path,
             movement_t * p_movement_stats)
 {
-    model   = LoadModel(p_model_path);
-    texture = LoadTexture(p_texture_path);
+    model                = LoadModel(p_model_path);
+    texture              = LoadTexture(p_texture_path);
+    engine_audio         = LoadMusicStream(p_audio_path);
+    engine_audio.looping = true;
+    PlayMusicStream(engine_audio);
     model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = texture;
 
     position = initial_position;
@@ -20,6 +24,7 @@ Ship::Ship (Vector3      initial_position,
 
 Ship::~Ship ()
 {
+    UnloadMusicStream(engine_audio);
     UnloadTexture(texture);
     UnloadModel(model);
 }
@@ -52,6 +57,8 @@ void Ship::reset ()
 
 void Ship::update (float delta_time)
 {
+    UpdateMusicStream(engine_audio);
+
     float boost = 1.0f;
 
     if (is_boosted && energy > 0.0f)
