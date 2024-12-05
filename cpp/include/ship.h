@@ -18,11 +18,7 @@ typedef struct movement_t
 class Delta
 {
 public:
-    void reset ()
-    {
-        *this = { 0 };
-    }
-
+    void  reset ();
     float forward    = 0.0f;
     float left       = 0.0f;
     float up         = 0.0f;
@@ -31,11 +27,21 @@ public:
     float yaw_left   = 0.0f;
 };
 
+void Delta::reset ()
+{
+    forward    = 0.0f;
+    left       = 0.0f;
+    up         = 0.0f;
+    pitch_down = 0.0f;
+    roll_right = 0.0f;
+    yaw_left   = 0.0f;
+}
+
 class Ship : public Actor
 {
 public:
-    Delta input_delta  = { 0 };
-    Delta smooth_delta = { 0 };
+    Delta input_delta  = Delta();
+    Delta smooth_delta = Delta();
     bool  is_boosted   = false;
     float health       = 100.0f;
     float energy       = 100.0f;
@@ -47,7 +53,7 @@ public:
     ~Ship ();
 
     void draw ();
-    void update (float delta_time);
+    void update (Ship & p_ship);
     void reset ();
 
 private:
