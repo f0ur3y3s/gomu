@@ -16,14 +16,22 @@ int main (void)
         10.0f   // turn_response
     };
 
-    Ship      ship   = Ship(Vector3 { 0.0f, 0.0f, 0.0f },
+    Ship ship = Ship(Vector3 { 0.0f, 0.0f, 0.0f },
                      SHIP_MODEL,
                      SHIP_TEXTURE,
                      &movement_stats);
-    UJUCamera camera = UJUCamera(Vector3 { 0.0f, 1.0f, -3.0f },
+    // UJUCamera camera = UJUCamera(Vector3 { 0.0f, 1.0f, -3.0f },
+    //                              Vector3Zero(),
+    //                              Vector3 { 0.0f, 1.0f, 0.0f });
+    UJUCamera camera = UJUCamera(Vector3 { 0.0f, 10.0f, -10.0f },
                                  Vector3Zero(),
                                  Vector3 { 0.0f, 1.0f, 0.0f });
-    HUD       hud    = HUD(SCREEN_WIDTH, SCREEN_HEIGHT, DEADZONE);
+
+    // UJUCamera camera = UJUCamera(
+    //     ship.transform_point(Vector3 { 0, 1, -3 }),
+    //     Vector3Add(ship.position, Vector3Scale(ship.get_forward(), 25.0f)),
+    //     ship.get_up());
+    HUD hud = HUD(SCREEN_WIDTH, SCREEN_HEIGHT, DEADZONE);
 
     Vector2      mouse_delta = { 0, 0 };
     static float timer       = 0.0f;

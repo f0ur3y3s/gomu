@@ -22,9 +22,9 @@ public:
     void    draw_end ();
 
 private:
-    Vector3 smooth_position;
-    Vector3 smooth_target;
-    Vector3 smooth_up;
+    Vector3 smooth_position = Vector3Zero();
+    Vector3 smooth_target   = Vector3Zero();
+    Vector3 smooth_up       = Vector3Zero();
 };
 
 // typedef struct camera_t

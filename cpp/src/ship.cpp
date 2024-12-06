@@ -143,7 +143,7 @@ void Ship::update (float delta_time)
         = QuaternionFromAxisAngle(Vector3 { 0, 0, 1 }, visual_bank);
 
     Matrix transform = MatrixTranslate(position.x, position.y, position.z);
+    transform        = MatrixMultiply(QuaternionToMatrix(rotation), transform);
     transform = MatrixMultiply(QuaternionToMatrix(visual_rotation), transform);
-    transform = MatrixMultiply(QuaternionToMatrix(rotation), transform);
     model.transform = transform;
 }

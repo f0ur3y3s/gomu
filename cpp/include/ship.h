@@ -18,7 +18,16 @@ typedef struct movement_t
 class Delta
 {
 public:
-    void  reset ();
+    void reset ()
+    {
+        forward    = 0.0f;
+        left       = 0.0f;
+        up         = 0.0f;
+        pitch_down = 0.0f;
+        roll_right = 0.0f;
+        yaw_left   = 0.0f;
+    };
+
     float forward    = 0.0f;
     float left       = 0.0f;
     float up         = 0.0f;
@@ -26,16 +35,6 @@ public:
     float roll_right = 0.0f;
     float yaw_left   = 0.0f;
 };
-
-void Delta::reset ()
-{
-    forward    = 0.0f;
-    left       = 0.0f;
-    up         = 0.0f;
-    pitch_down = 0.0f;
-    roll_right = 0.0f;
-    yaw_left   = 0.0f;
-}
 
 class Ship : public Actor
 {
