@@ -19,6 +19,7 @@ public:
     Vector3 get_position ();
     bool    is_hit     = false;
     bool    show_stats = false;
+    bool    render     = false;
 
     BoundingBox bounding_box = { 0 };
 

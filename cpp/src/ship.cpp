@@ -96,6 +96,23 @@ void Ship::update (float delta_time)
         }
     }
 
+    if (is_shooting && 0.0f < weapon_energy)
+    {
+        weapon_energy -= 10.0f * delta_time;
+        weapon_energy         = Clamp(weapon_energy, 0.0f, 100.0f);
+        weapon_recharge_timer = 0.0f;
+    }
+    else
+    {
+        weapon_recharge_timer += delta_time;
+
+        if (weapon_recharge_timer >= 1.0f)
+        {
+            weapon_energy += 20.0f * delta_time;
+            weapon_energy = Clamp(weapon_energy, 0.0f, 100.0f);
+        }
+    }
+
     // Calculate dampened movement
     smooth_delta.forward = float_damp(smooth_delta.forward,
                                       input_delta.forward * boost,
@@ -114,22 +131,22 @@ void Ship::update (float delta_time)
 
     float speed_multiplier = smooth_delta.forward > 0.0f ? 1.0f : 0.5f;
 
-    Vector3 velocity = Vector3Zero();
-    velocity
-        = Vector3Add(velocity,
+    Vector3 target_velocity = Vector3Zero();
+    target_velocity
+        = Vector3Add(target_velocity,
                      Vector3Scale(get_forward(),
                                   movement_stat.max_speed * smooth_delta.forward
                                       * speed_multiplier));
-    velocity = Vector3Add(
-        velocity,
+    target_velocity = Vector3Add(
+        target_velocity,
         Vector3Scale(get_up(),
                      movement_stat.max_speed * 0.5f * smooth_delta.up));
-    velocity = Vector3Add(
-        velocity,
+    target_velocity = Vector3Add(
+        target_velocity,
         Vector3Scale(get_left(),
                      movement_stat.max_speed * 0.5f * smooth_delta.left));
 
-    velocity = vector3_damp(velocity, velocity, 2.5f, delta_time);
+    velocity = vector3_damp(velocity, target_velocity, 2.5f, delta_time);
     position = Vector3Add(position, Vector3Scale(velocity, delta_time));
 
     smooth_delta.roll_right = float_damp(smooth_delta.roll_right,
@@ -197,4 +214,9 @@ void Ship::shoot ()
 Vector3 Ship::get_aim ()
 {
     return aim_vector;
+}
+
+Vector3 Ship::get_stats ()
+{
+    return Vector3 { health, engine_energy, weapon_energy };
 }

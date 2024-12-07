@@ -69,6 +69,27 @@ void HUD::draw_engine_energy ()
 
 void HUD::draw_weapon_energy ()
 {
+    float start_angle = 0.0f;
+    float bar_size    = 45.0f;
+
+    float energy_size = bar_size * (weapon_energy / 100.0f);
+    energy_size       = Clamp(energy_size, 0.0f, bar_size);
+
+    DrawRing(Vector2 { screen_center.x, screen_center.y },
+             radius + bar_offset,
+             radius + bar_offset + bar_thickness,
+             start_angle,
+             start_angle + energy_size,
+             100,
+             Fade(RED, 0.5f));
+
+    DrawRingLines(Vector2 { screen_center.x, screen_center.y },
+                  radius + bar_offset,
+                  radius + bar_offset + bar_thickness,
+                  start_angle,
+                  start_angle + bar_size,
+                  100,
+                  Fade(FOREGROUND, 0.5f));
 }
 
 void HUD::draw (Vector2 mouse_delta)
@@ -107,9 +128,13 @@ void HUD::draw (Vector2 mouse_delta)
 
 void HUD::update (Ship & p_ship)
 {
-    health        = p_ship.health;
-    engine_energy = p_ship.engine_energy;
-    weapon_energy = p_ship.weapon_energy;
+    Vector3 stats = p_ship.get_stats();
+    health        = stats.x;
+    engine_energy = stats.y;
+    weapon_energy = stats.z;
+    // health        = p_ship.health;
+    // engine_energy = p_ship.engine_energy;
+    // weapon_energy = p_ship.weapon_energy;
     // if (p_ship.aim_colliding)
     // {
     //     show_aim = true;

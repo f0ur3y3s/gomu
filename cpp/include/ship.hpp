@@ -33,15 +33,13 @@ public:
 class Ship : public Actor
 {
 public:
-    Delta   input_delta   = Delta();
-    Delta   smooth_delta  = Delta();
-    bool    is_boosted    = false;
-    bool    is_shooting   = false;
-    bool    aim_colliding = false;
-    float   health        = 100.0f;
-    float   engine_energy = 100.0f;
-    float   weapon_energy = 100.0f;
-    Vector3 aim_target    = Vector3Zero();
+    Delta input_delta   = Delta();
+    Delta smooth_delta  = Delta();
+    bool  is_boosted    = false;
+    bool  is_shooting   = false;
+    bool  aim_colliding = false;
+
+    Vector3 aim_target = Vector3Zero();
 
     Ship (Vector3      initial_position,
           const char * p_model_path,
@@ -53,15 +51,20 @@ public:
     void    update (float delta_time);
     void    reset ();
     void    shoot ();
+    Vector3 get_stats (); // health, engine_energy, weapon_energy
     Vector3 get_aim ();
 
 private:
     Model      model;
     Texture2D  texture;
     movement_t movement_stat;
-    float      visual_bank          = 0.0f;
-    float      boost_recharge_timer = 0.0f;
-    Vector3    aim_vector           = Vector3Zero();
+    float      visual_bank           = 0.0f;
+    float      boost_recharge_timer  = 0.0f;
+    float      weapon_recharge_timer = 0.0f;
+    float      health                = 100.0f;
+    float      engine_energy         = 100.0f;
+    float      weapon_energy         = 100.0f;
+    Vector3    aim_vector            = Vector3Zero();
 };
 
 #endif

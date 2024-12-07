@@ -1,5 +1,6 @@
 #include "uju.hpp"
 #include <vector>
+#include "dust.hpp"
 
 static Vector2 update_aim (Ship & p_ship, Vector2 * p_out_mouse_delta);
 static void    update_input (Ship & p_ship, Vector2 * p_out_mouse_delta);
@@ -9,6 +10,8 @@ int main (void)
     SetConfigFlags(FLAG_MSAA_4X_HINT | FLAG_VSYNC_HINT);
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "uju raylib");
     SetTargetFPS(60);
+
+    Dust dust = Dust(25, 255);
 
     movement_t movement_stats = {
         20.0f,  // max_speed
@@ -35,7 +38,7 @@ int main (void)
     // create vector of targets
     std::vector<Enemy> enemies;
 
-    for (int i = 0; i < 100; i++)
+    for (int i = 0; i < 200; i++)
     {
         enemies.push_back(Enemy(Vector3 { (float)GetRandomValue(-100, 100),
                                           (float)GetRandomValue(-100, 100),
@@ -53,10 +56,26 @@ int main (void)
         float frame_time = GetFrameTime();
         ship.update(frame_time);
         camera.follow(ship, frame_time);
+        dust.UpdateViewPosition(camera.get_position());
+
+        Vector3 ship_forward = ship.get_forward();
 
         for (auto & enemy : enemies)
         {
-            Ray bullet_ray = { ship.position, ship.get_forward() };
+            Vector3 to_enemy = Vector3Subtract(enemy.position, ship.position);
+            float   dot_product = Vector3DotProduct(ship_forward, to_enemy);
+
+            // if the enemy is behind the ship, skip it
+            if (dot_product <= 0.0f)
+            {
+                enemy.is_hit     = false;
+                enemy.show_stats = false;
+                enemy.render     = false;
+                continue;
+            }
+
+            enemy.render   = true;
+            Ray bullet_ray = { ship.position, ship_forward };
 
             // if bullet ray is outside of 100 units, don't bother
             if (Vector3Distance(bullet_ray.position, enemy.position) > 100.0f)
@@ -94,13 +113,14 @@ int main (void)
 
         // Start 3D drawing
         camera.draw_begin();
-        DrawGrid(1000, 1.0f);
+        // DrawGrid(1000, 1.0f);
         ship.draw();
 
         for (auto & enemy : enemies)
         {
             enemy.draw();
         }
+        dust.Draw(camera.get_position(), ship.velocity, false);
 
         DrawSphere(hit_position, 0.1f, BLUE);
         camera.draw_end();
@@ -108,11 +128,6 @@ int main (void)
 
         for (auto & enemy : enemies)
         {
-            // only show enemy within camera view
-            // if (is_enemy_in_view(camera.camera, enemy) && enemy.show_stats)
-            // {
-            //     enemy.draw_health(camera.camera);
-            // }
             if (enemy.show_stats)
             {
                 enemy.draw_health(camera.camera);

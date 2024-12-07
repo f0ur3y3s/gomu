@@ -31,6 +31,11 @@ void Enemy::update (float delta_time)
 
 void Enemy::draw ()
 {
+    if (!render)
+    {
+        return;
+    }
+
     if (is_hit)
     {
         DrawSphere(position, 1.0f, RED);
@@ -40,11 +45,11 @@ void Enemy::draw ()
         DrawSphere(position, 1.0f, GREEN);
     }
 
-    BoundingBox calculated_bounding_box = {
-        Vector3Subtract(position, Vector3One()),
-        Vector3Add(position, Vector3One()),
-    };
-    DrawBoundingBox(calculated_bounding_box, PURPLE);
+    // BoundingBox calculated_bounding_box = {
+    //     Vector3Subtract(position, Vector3One()),
+    //     Vector3Add(position, Vector3One()),
+    // };
+    // DrawBoundingBox(calculated_bounding_box, PURPLE);
 }
 
 void Enemy::draw_health (Camera3D camera)
