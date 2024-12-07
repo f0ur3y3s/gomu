@@ -1,4 +1,5 @@
 #include "uju.hpp"
+#include <vector>
 
 static Vector2 update_aim (Ship & p_ship, Vector2 * p_out_mouse_delta);
 static void    update_input (Ship & p_ship, Vector2 * p_out_mouse_delta);
@@ -31,11 +32,15 @@ int main (void)
     static float timer       = 0.0f;
     bool         health_up   = false;
 
-    // DEBUG
-    Vector3 target_position = { 0.0f, 0.0f, 5.0f };
-    float   target_radius   = 1.0f;
-    bool    target_is_hit   = false;
-    // ENDDEBUG
+    // create vector of targets
+    std::vector<Enemy> enemies;
+
+    for (int i = 0; i < 100; i++)
+    {
+        enemies.push_back(Enemy(Vector3 { (float)GetRandomValue(-100, 100),
+                                          (float)GetRandomValue(-100, 100),
+                                          (float)GetRandomValue(-100, 100) }));
+    }
 
     HideCursor();
 
@@ -43,42 +48,76 @@ int main (void)
 
     while (!WindowShouldClose())
     {
+        // if (ship.is_shooting)
+        // {
+        //     // ship.engine_energy -= 10.0f * frame_time;
+        //     Ray          bullet_ray = { ship.position, ship.get_forward() };
+        //     RayCollision collision  = GetRayCollisionSphere(
+        //         bullet_ray, target_position, target_radius);
+
+        //     if (collision.hit)
+        //     {
+        //         // spawn a sphere at the hit position
+        //         hit_position = collision.point;
+        //     }
+        //     target_is_hit = collision.hit;
+        // }
+        // else
+        // {
+        //     target_is_hit = false;
+        // }
         update_input(ship, &mouse_delta);
 
         float frame_time = GetFrameTime();
         ship.update(frame_time);
         camera.follow(ship, frame_time);
-        hud.update(ship);
 
-        if (ship.is_shooting)
+        for (auto & enemy : enemies)
         {
-            // ship.energy -= 10.0f * frame_time;
-            Ray          bullet_ray = { ship.position, ship.get_forward() };
-            RayCollision collision  = GetRayCollisionSphere(
-                bullet_ray, target_position, target_radius);
+            Ray bullet_ray = { ship.position, ship.get_forward() };
 
-            if (collision.hit)
+            // if bullet ray is outside of 100 units, don't bother
+            if (Vector3Distance(bullet_ray.position, enemy.position) > 100.0f)
             {
-                // spawn a sphere at the hit position
-                hit_position = collision.point;
+                enemy.is_hit = false;
             }
-            target_is_hit = collision.hit;
+            else
+            {
+                RayCollision collision
+                    = GetRayCollisionSphere(bullet_ray, enemy.position, 1.0f);
+
+                if (collision.hit)
+                {
+                    hit_position = collision.point;
+                    enemy.is_hit = true;
+                }
+                else
+                {
+                    enemy.is_hit = false;
+                }
+            }
+            // Enemy.update(frame_time, ship.get_aim());
         }
-        else
-        {
-            target_is_hit = false;
-        }
+
+        hud.update(ship);
 
         BeginDrawing();
         ClearBackground(BACKGROUND);
 
+        // Start 3D drawing
         camera.draw_begin();
         DrawGrid(1000, 1.0f);
         ship.draw();
 
-        DrawSphere(target_position, target_radius, target_is_hit ? RED : GREEN);
+        for (auto & Enemy : enemies)
+        {
+            Enemy.draw();
+        }
+
         DrawSphere(hit_position, 0.1f, BLUE);
         camera.draw_end();
+        // End 3D drawing
+
         hud.draw(mouse_delta);
         DrawFPS(10, 10);
         DrawText(TextFormat("Rotation: %f %f %f %f",

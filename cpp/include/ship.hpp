@@ -7,13 +7,7 @@
 #include "actor.hpp"
 #include "uju_utils.hpp"
 
-typedef struct movement_t
-{
-    float max_speed;
-    float throttle_response;
-    float turn_rate;
-    float turn_response;
-} movement_t;
+#include "movement.h"
 
 class Delta
 {
@@ -39,12 +33,15 @@ public:
 class Ship : public Actor
 {
 public:
-    Delta input_delta  = Delta();
-    Delta smooth_delta = Delta();
-    bool  is_boosted   = false;
-    bool  is_shooting  = false;
-    float health       = 100.0f;
-    float energy       = 100.0f;
+    Delta   input_delta   = Delta();
+    Delta   smooth_delta  = Delta();
+    bool    is_boosted    = false;
+    bool    is_shooting   = false;
+    bool    aim_colliding = false;
+    float   health        = 100.0f;
+    float   engine_energy = 100.0f;
+    float   weapon_energy = 100.0f;
+    Vector3 aim_target    = Vector3Zero();
 
     Ship (Vector3      initial_position,
           const char * p_model_path,
@@ -52,9 +49,11 @@ public:
           movement_t * p_movement_stats);
     ~Ship ();
 
-    void draw ();
-    void update (float delta_time);
-    void reset ();
+    void    draw ();
+    void    update (float delta_time);
+    void    reset ();
+    void    shoot ();
+    Vector3 get_aim ();
 
 private:
     Model      model;
@@ -62,6 +61,7 @@ private:
     movement_t movement_stat;
     float      visual_bank          = 0.0f;
     float      boost_recharge_timer = 0.0f;
+    Vector3    aim_vector           = Vector3Zero();
 };
 
 #endif

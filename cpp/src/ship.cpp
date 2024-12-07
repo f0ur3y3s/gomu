@@ -1,4 +1,5 @@
 #include "ship.hpp"
+#include <stdio.h>
 
 Ship::Ship (Vector3      initial_position,
             const char * p_model_path,
@@ -27,27 +28,28 @@ Ship::~Ship ()
 void Ship::draw ()
 {
     DrawModel(model, Vector3Zero(), 1.0f, WHITE);
+    DrawLine3D(aim_vector, aim_target, PURPLE);
 
-    if (is_shooting)
-    {
-        Ray     bullet_ray      = { position, get_forward() };
-        Vector3 target_position = Vector3Add(
-            bullet_ray.position, Vector3Scale(bullet_ray.direction, 100.0f));
+    // if (is_shooting)
+    // {
+    //     Ray     bullet_ray      = { position, get_forward() };
+    //     Vector3 target_position = Vector3Add(
+    //         bullet_ray.position, Vector3Scale(bullet_ray.direction, 100.0f));
 
-        Vector3 direction
-            = Vector3Subtract(target_position, bullet_ray.position);
+    //     Vector3 direction
+    //         = Vector3Subtract(target_position, bullet_ray.position);
 
-        float length = Vector3Length(direction);
+    //     float length = Vector3Length(direction);
 
-        direction = Vector3Normalize(direction);
+    //     direction = Vector3Normalize(direction);
 
-        DrawCylinderEx(bullet_ray.position,
-                       target_position,
-                       0.01f,
-                       0.01f,
-                       4,
-                       Fade(RED, 0.5f));
-    }
+    //     DrawCylinderEx(bullet_ray.position,
+    //                    target_position,
+    //                    0.01f,
+    //                    0.01f,
+    //                    4,
+    //                    Fade(RED, 0.5f));
+    // }
     // DrawLine3D(
     //     position, Vector3Add(position, Vector3Scale(get_forward(), 2.0f)),
     //     RED);
@@ -60,26 +62,28 @@ void Ship::draw ()
 
 void Ship::reset ()
 {
-    position     = Vector3Zero();
-    velocity     = Vector3Zero();
-    rotation     = QuaternionIdentity();
-    input_delta  = Delta();
-    smooth_delta = Delta();
-    visual_bank  = 0.0f;
-    health       = 100.0f;
-    energy       = 100.0f;
-    is_boosted   = false;
+    position      = Vector3Zero();
+    velocity      = Vector3Zero();
+    rotation      = QuaternionIdentity();
+    input_delta   = Delta();
+    smooth_delta  = Delta();
+    visual_bank   = 0.0f;
+    health        = 100.0f;
+    engine_energy = 100.0f;
+    is_boosted    = false;
 }
 
 void Ship::update (float delta_time)
 {
     float boost = 1.0f;
 
-    if (is_boosted && energy > 0.0f)
+    // Update engine energy and boost
+
+    if (is_boosted && 0.0f < engine_energy)
     {
         boost = 3.0f;
-        energy -= 10.0f * delta_time;
-        energy               = Clamp(energy, 0.0f, 100.0f);
+        engine_energy -= 10.0f * delta_time;
+        engine_energy        = Clamp(engine_energy, 0.0f, 100.0f);
         boost_recharge_timer = 0.0f;
     }
     else
@@ -88,11 +92,12 @@ void Ship::update (float delta_time)
 
         if (boost_recharge_timer >= 3.0f)
         {
-            energy += 20.0f * delta_time;
-            energy = Clamp(energy, 0.0f, 100.0f);
+            engine_energy += 20.0f * delta_time;
+            engine_energy = Clamp(engine_energy, 0.0f, 100.0f);
         }
     }
 
+    // Calculate dampened movement
     smooth_delta.forward = float_damp(smooth_delta.forward,
                                       input_delta.forward * boost,
                                       movement_stat.throttle_response,
@@ -143,6 +148,7 @@ void Ship::update (float delta_time)
                                          movement_stat.turn_response,
                                          delta_time);
 
+    // Update rotation
     rotate_local_euler(Vector3 { 0, 0, 1 },
                        smooth_delta.roll_right * delta_time
                            * movement_stat.turn_rate);
@@ -163,8 +169,33 @@ void Ship::update (float delta_time)
     Quaternion visual_rotation
         = QuaternionFromAxisAngle(Vector3 { 0, 0, 1 }, visual_bank);
 
+    // Update model transform
     Matrix transform = MatrixTranslate(position.x, position.y, position.z);
     transform        = MatrixMultiply(QuaternionToMatrix(rotation), transform);
     transform = MatrixMultiply(QuaternionToMatrix(visual_rotation), transform);
     model.transform = transform;
+
+    // Update aim
+    aim_vector = Vector3Add(position, get_forward());
+    aim_target = Vector3Add(aim_vector, get_forward());
+    // draw a 3d line
+}
+
+void Ship::shoot ()
+{
+    if (0.0f < weapon_energy)
+    {
+        is_shooting = true;
+        weapon_energy -= 10.0f;
+        weapon_energy = Clamp(weapon_energy, 0.0f, 100.0f);
+    }
+    else
+    {
+        is_shooting = false;
+    }
+}
+
+Vector3 Ship::get_aim ()
+{
+    return aim_vector;
 }

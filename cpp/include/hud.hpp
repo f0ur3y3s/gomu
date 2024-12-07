@@ -22,10 +22,11 @@ private:
     float   deadzone      = 0;
     Vector2 screen_center = { 0, 0 };
     float   health        = 100.0f;
-    float   energy        = 100.0f;
+    float   engine_energy = 100.0f;
     float   bar_offset    = 10.0f;
     float   bar_thickness = 20.0f;
     float   bar_size      = 90.0f;
+    bool    show_aim      = false;
 };
 
 #endif

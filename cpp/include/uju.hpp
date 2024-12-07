@@ -9,6 +9,7 @@
 #include "ship.hpp"
 #include "uju_camera.hpp"
 #include "hud.hpp"
+#include "enemy.hpp"
 
 #define SCREEN_WIDTH  1920
 #define SCREEN_HEIGHT 1080

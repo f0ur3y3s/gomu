@@ -45,7 +45,7 @@ void HUD::draw_energy ()
 {
     float start_angle = 45.0f;
 
-    float energy_size = bar_size * (energy / 100.0f);
+    float energy_size = bar_size * (engine_energy / 100.0f);
     energy_size       = Clamp(energy_size, 0.0f, bar_size);
 
     DrawRing(Vector2 { screen_center.x, screen_center.y },
@@ -78,9 +78,7 @@ void HUD::draw (Vector2 mouse_delta)
              100,
              Fade(FOREGROUND, 0.5f));
 
-    // mouse
-    // DrawCircleV(mouse_delta, 10, RED);
-    // draw a crosshair
+    // crosshair
     DrawLineEx(Vector2 { mouse_delta.x - 10, mouse_delta.y },
                Vector2 { mouse_delta.x + 10, mouse_delta.y },
                2,
@@ -89,7 +87,12 @@ void HUD::draw (Vector2 mouse_delta)
                Vector2 { mouse_delta.x, mouse_delta.y + 10 },
                2,
                FOREGROUND);
-    DrawRingLines(mouse_delta, 15, 15 - 1, 0, 360, 100, Fade(FOREGROUND, 0.5f));
+
+    // only if aim is colliding
+    if (show_aim)
+    {
+        DrawRingLines(mouse_delta, 15, 15 - 1, 0, 360, 100, FOREGROUND);
+    }
 
     draw_health();
     draw_energy();
@@ -97,8 +100,17 @@ void HUD::draw (Vector2 mouse_delta)
 
 void HUD::update (Ship & p_ship)
 {
-    health = p_ship.health;
-    energy = p_ship.energy;
+    health        = p_ship.health;
+    engine_energy = p_ship.engine_energy;
+
+    if (p_ship.aim_colliding)
+    {
+        show_aim = true;
+    }
+    else
+    {
+        show_aim = false;
+    }
 }
 
 void HUD::update (Ship & p_ship, bool is_target_in_aim)
