@@ -3,8 +3,8 @@
 
 #include "raylib.h"
 #include "raymath.h"
-#include "uju_utils.h"
-#include "ship.h"
+#include "uju_utils.hpp"
+#include "ship.hpp"
 
 class UJUCamera
 {

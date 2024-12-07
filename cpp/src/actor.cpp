@@ -1,4 +1,4 @@
-#include "actor.h"
+#include "actor.hpp"
 
 Actor::Actor ()
 {

@@ -4,8 +4,8 @@
 #include <stdlib.h>
 
 #include "raylib.h"
-#include "actor.h"
-#include "uju_utils.h"
+#include "actor.hpp"
+#include "uju_utils.hpp"
 
 typedef struct movement_t
 {
@@ -42,6 +42,7 @@ public:
     Delta input_delta  = Delta();
     Delta smooth_delta = Delta();
     bool  is_boosted   = false;
+    bool  is_shooting  = false;
     float health       = 100.0f;
     float energy       = 100.0f;
 

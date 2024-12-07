@@ -1,4 +1,4 @@
-#include "uju_camera.h"
+#include "uju_camera.hpp"
 
 UJUCamera::UJUCamera (Vector3 position, Vector3 target, Vector3 up)
 {

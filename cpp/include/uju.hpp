@@ -6,9 +6,9 @@
 #include "raylib.h"
 #include "raymath.h"
 
-#include "ship.h"
-#include "uju_camera.h"
-#include "hud.h"
+#include "ship.hpp"
+#include "uju_camera.hpp"
+#include "hud.hpp"
 
 #define SCREEN_WIDTH  1920
 #define SCREEN_HEIGHT 1080

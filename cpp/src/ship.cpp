@@ -1,4 +1,4 @@
-#include "ship.h"
+#include "ship.hpp"
 
 Ship::Ship (Vector3      initial_position,
             const char * p_model_path,
@@ -27,6 +27,27 @@ Ship::~Ship ()
 void Ship::draw ()
 {
     DrawModel(model, Vector3Zero(), 1.0f, WHITE);
+
+    if (is_shooting)
+    {
+        Ray     bullet_ray      = { position, get_forward() };
+        Vector3 target_position = Vector3Add(
+            bullet_ray.position, Vector3Scale(bullet_ray.direction, 100.0f));
+
+        Vector3 direction
+            = Vector3Subtract(target_position, bullet_ray.position);
+
+        float length = Vector3Length(direction);
+
+        direction = Vector3Normalize(direction);
+
+        DrawCylinderEx(bullet_ray.position,
+                       target_position,
+                       0.01f,
+                       0.01f,
+                       4,
+                       Fade(RED, 0.5f));
+    }
     // DrawLine3D(
     //     position, Vector3Add(position, Vector3Scale(get_forward(), 2.0f)),
     //     RED);

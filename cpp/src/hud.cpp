@@ -1,4 +1,4 @@
-#include "hud.h"
+#include "hud.hpp"
 
 HUD::HUD (float screen_width, float screen_height, float aim_deadzone)
 {
@@ -68,13 +68,28 @@ void HUD::draw_energy ()
 void HUD::draw (Vector2 mouse_delta)
 {
     // reticle
-    DrawRing(screen_center, radius, radius - 1, 0, 360, 100, FOREGROUND);
-    // DrawCircleLines(
-    //     screen_center.x, screen_center.y, deadzone, Fade(FOREGROUND, 0.5f));
-    DrawRing(screen_center, deadzone, deadzone - 1, 0, 360, 100, FOREGROUND);
+    DrawRing(
+        screen_center, radius, radius - 1, 0, 360, 100, Fade(FOREGROUND, 0.5f));
+    DrawRing(screen_center,
+             deadzone,
+             deadzone - 1,
+             0,
+             360,
+             100,
+             Fade(FOREGROUND, 0.5f));
 
     // mouse
-    DrawCircleV(mouse_delta, 10, RED);
+    // DrawCircleV(mouse_delta, 10, RED);
+    // draw a crosshair
+    DrawLineEx(Vector2 { mouse_delta.x - 10, mouse_delta.y },
+               Vector2 { mouse_delta.x + 10, mouse_delta.y },
+               2,
+               FOREGROUND);
+    DrawLineEx(Vector2 { mouse_delta.x, mouse_delta.y - 10 },
+               Vector2 { mouse_delta.x, mouse_delta.y + 10 },
+               2,
+               FOREGROUND);
+    DrawRingLines(mouse_delta, 15, 15 - 1, 0, 360, 100, Fade(FOREGROUND, 0.5f));
 
     draw_health();
     draw_energy();
@@ -84,4 +99,9 @@ void HUD::update (Ship & p_ship)
 {
     health = p_ship.health;
     energy = p_ship.energy;
+}
+
+void HUD::update (Ship & p_ship, bool is_target_in_aim)
+{
+    // none for now
 }

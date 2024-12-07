@@ -1,4 +1,4 @@
-#include "uju_utils.h"
+#include "uju_utils.hpp"
 
 float float_damp (float from, float to, float speed, float delta_time)
 {

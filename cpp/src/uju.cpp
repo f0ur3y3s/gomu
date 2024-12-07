@@ -1,4 +1,4 @@
-#include "uju.h"
+#include "uju.hpp"
 
 static Vector2 update_aim (Ship & p_ship, Vector2 * p_out_mouse_delta);
 static void    update_input (Ship & p_ship, Vector2 * p_out_mouse_delta);
@@ -20,22 +20,26 @@ int main (void)
                      SHIP_MODEL,
                      SHIP_TEXTURE,
                      &movement_stats);
-    // UJUCamera camera = UJUCamera(Vector3 { 0.0f, 1.0f, -3.0f },
-    //                              Vector3Zero(),
-    //                              Vector3 { 0.0f, 1.0f, 0.0f });
+
     UJUCamera camera = UJUCamera(Vector3 { 0.0f, 10.0f, -10.0f },
                                  Vector3Zero(),
                                  Vector3 { 0.0f, 1.0f, 0.0f });
 
-    // UJUCamera camera = UJUCamera(
-    //     ship.transform_point(Vector3 { 0, 1, -3 }),
-    //     Vector3Add(ship.position, Vector3Scale(ship.get_forward(), 25.0f)),
-    //     ship.get_up());
     HUD hud = HUD(SCREEN_WIDTH, SCREEN_HEIGHT, DEADZONE);
 
     Vector2      mouse_delta = { 0, 0 };
     static float timer       = 0.0f;
     bool         health_up   = false;
+
+    // DEBUG
+    Vector3 target_position = { 0.0f, 0.0f, 5.0f };
+    float   target_radius   = 1.0f;
+    bool    target_is_hit   = false;
+    // ENDDEBUG
+
+    HideCursor();
+
+    Vector3 hit_position = Vector3Zero();
 
     while (!WindowShouldClose())
     {
@@ -46,12 +50,34 @@ int main (void)
         camera.follow(ship, frame_time);
         hud.update(ship);
 
+        if (ship.is_shooting)
+        {
+            // ship.energy -= 10.0f * frame_time;
+            Ray          bullet_ray = { ship.position, ship.get_forward() };
+            RayCollision collision  = GetRayCollisionSphere(
+                bullet_ray, target_position, target_radius);
+
+            if (collision.hit)
+            {
+                // spawn a sphere at the hit position
+                hit_position = collision.point;
+            }
+            target_is_hit = collision.hit;
+        }
+        else
+        {
+            target_is_hit = false;
+        }
+
         BeginDrawing();
         ClearBackground(BACKGROUND);
 
         camera.draw_begin();
         DrawGrid(1000, 1.0f);
         ship.draw();
+
+        DrawSphere(target_position, target_radius, target_is_hit ? RED : GREEN);
+        DrawSphere(hit_position, 0.1f, BLUE);
         camera.draw_end();
         hud.draw(mouse_delta);
         DrawFPS(10, 10);
@@ -186,6 +212,15 @@ static void update_input (Ship & p_ship, Vector2 * p_out_mouse_delta)
     if (IsKeyDown(KEY_LEFT_CONTROL))
     {
         p_ship.input_delta.up += -1.0f;
+    }
+
+    if (IsMouseButtonDown(MOUSE_LEFT_BUTTON))
+    {
+        p_ship.is_shooting = true;
+    }
+    else
+    {
+        p_ship.is_shooting = false;
     }
 
     Vector2 aim = update_aim(p_ship, p_out_mouse_delta);
