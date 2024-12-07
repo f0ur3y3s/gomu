@@ -12,6 +12,7 @@ HUD::HUD (float screen_width, float screen_height, float aim_deadzone)
 void HUD::draw_health ()
 {
     float start_angle = 135.0f;
+    float bar_size    = 90.0f;
 
     Color color_array[] = {
         RED, ORANGE, YELLOW, GREEN, DARKGREEN,
@@ -41,9 +42,10 @@ void HUD::draw_health ()
                   Fade(FOREGROUND, 0.5f));
 }
 
-void HUD::draw_energy ()
+void HUD::draw_engine_energy ()
 {
-    float start_angle = 45.0f;
+    float start_angle = 0.0f;
+    float bar_size    = 45.0f;
 
     float energy_size = bar_size * (engine_energy / 100.0f);
     energy_size       = Clamp(energy_size, 0.0f, bar_size);
@@ -65,6 +67,10 @@ void HUD::draw_energy ()
                   Fade(FOREGROUND, 0.5f));
 }
 
+void HUD::draw_weapon_energy ()
+{
+}
+
 void HUD::draw (Vector2 mouse_delta)
 {
     // reticle
@@ -82,11 +88,11 @@ void HUD::draw (Vector2 mouse_delta)
     DrawLineEx(Vector2 { mouse_delta.x - 10, mouse_delta.y },
                Vector2 { mouse_delta.x + 10, mouse_delta.y },
                2,
-               FOREGROUND);
+               Fade(FOREGROUND, 0.5f));
     DrawLineEx(Vector2 { mouse_delta.x, mouse_delta.y - 10 },
                Vector2 { mouse_delta.x, mouse_delta.y + 10 },
                2,
-               FOREGROUND);
+               Fade(FOREGROUND, 0.5f));
 
     // only if aim is colliding
     if (show_aim)
@@ -95,25 +101,26 @@ void HUD::draw (Vector2 mouse_delta)
     }
 
     draw_health();
-    draw_energy();
+    draw_engine_energy();
+    draw_weapon_energy();
 }
 
 void HUD::update (Ship & p_ship)
 {
     health        = p_ship.health;
     engine_energy = p_ship.engine_energy;
-
-    if (p_ship.aim_colliding)
-    {
-        show_aim = true;
-    }
-    else
-    {
-        show_aim = false;
-    }
+    weapon_energy = p_ship.weapon_energy;
+    // if (p_ship.aim_colliding)
+    // {
+    //     show_aim = true;
+    // }
+    // else
+    // {
+    //     show_aim = false;
+    // }
 }
 
-void HUD::update (Ship & p_ship, bool is_target_in_aim)
-{
-    // none for now
-}
+// void HUD::update (Ship & p_ship, bool is_target_in_aim)
+// {
+//     // none for now
+// }

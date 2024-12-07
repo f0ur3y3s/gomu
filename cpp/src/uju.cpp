@@ -48,24 +48,6 @@ int main (void)
 
     while (!WindowShouldClose())
     {
-        // if (ship.is_shooting)
-        // {
-        //     // ship.engine_energy -= 10.0f * frame_time;
-        //     Ray          bullet_ray = { ship.position, ship.get_forward() };
-        //     RayCollision collision  = GetRayCollisionSphere(
-        //         bullet_ray, target_position, target_radius);
-
-        //     if (collision.hit)
-        //     {
-        //         // spawn a sphere at the hit position
-        //         hit_position = collision.point;
-        //     }
-        //     target_is_hit = collision.hit;
-        // }
-        // else
-        // {
-        //     target_is_hit = false;
-        // }
         update_input(ship, &mouse_delta);
 
         float frame_time = GetFrameTime();
@@ -79,24 +61,30 @@ int main (void)
             // if bullet ray is outside of 100 units, don't bother
             if (Vector3Distance(bullet_ray.position, enemy.position) > 100.0f)
             {
-                enemy.is_hit = false;
+                enemy.is_hit     = false;
+                enemy.show_stats = false;
             }
             else
             {
+                enemy.show_stats = true;
+
                 RayCollision collision
                     = GetRayCollisionSphere(bullet_ray, enemy.position, 1.0f);
 
                 if (collision.hit)
                 {
+                    hud.show_aim = true;
                     hit_position = collision.point;
                     enemy.is_hit = true;
+                    enemy.update(frame_time);
+                    break;
                 }
                 else
                 {
+                    hud.show_aim = false;
                     enemy.is_hit = false;
                 }
             }
-            // Enemy.update(frame_time, ship.get_aim());
         }
 
         hud.update(ship);
@@ -109,14 +97,27 @@ int main (void)
         DrawGrid(1000, 1.0f);
         ship.draw();
 
-        for (auto & Enemy : enemies)
+        for (auto & enemy : enemies)
         {
-            Enemy.draw();
+            enemy.draw();
         }
 
         DrawSphere(hit_position, 0.1f, BLUE);
         camera.draw_end();
         // End 3D drawing
+
+        for (auto & enemy : enemies)
+        {
+            // only show enemy within camera view
+            // if (is_enemy_in_view(camera.camera, enemy) && enemy.show_stats)
+            // {
+            //     enemy.draw_health(camera.camera);
+            // }
+            if (enemy.show_stats)
+            {
+                enemy.draw_health(camera.camera);
+            }
+        }
 
         hud.draw(mouse_delta);
         DrawFPS(10, 10);

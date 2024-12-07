@@ -13,20 +13,21 @@ public:
 
     void draw (Vector2 mouse_delta);
     void update (Ship & p_ship);
-    void update (Ship & p_ship, bool is_target_in_aim);
+    // void update (Ship & p_ship, bool is_target_in_aim);
+    bool show_aim = false;
 
 private:
     void    draw_health ();
-    void    draw_energy ();
+    void    draw_engine_energy ();
+    void    draw_weapon_energy ();
     float   radius        = 0;
     float   deadzone      = 0;
     Vector2 screen_center = { 0, 0 };
     float   health        = 100.0f;
     float   engine_energy = 100.0f;
+    float   weapon_energy = 100.0f;
     float   bar_offset    = 10.0f;
     float   bar_thickness = 20.0f;
-    float   bar_size      = 90.0f;
-    bool    show_aim      = false;
 };
 
 #endif
